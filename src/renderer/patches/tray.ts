@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { onceReady } from "@equicord/types/webpack";
-import { FluxDispatcher, MediaEngineStore, UserStore } from "@equicord/types/webpack/common";
+import { onceReady } from "@testcord/types/webpack";
+import { FluxDispatcher, MediaEngineStore, UserStore } from "@testcord/types/webpack/common";
 import { Settings } from "renderer/settings";
 
 import { setBadge } from "../appBadge";

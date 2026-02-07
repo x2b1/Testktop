@@ -72,7 +72,7 @@ export interface State {
     steamOSLayoutVersion?: number;
     linuxAutoStartEnabled?: boolean;
 
-    equicordDir?: string;
+    testcordDir?: string;
 
     launchArguments?: string;
 

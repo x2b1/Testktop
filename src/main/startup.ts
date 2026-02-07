@@ -20,9 +20,9 @@ import { Settings, State } from "./settings";
 import { setAsDefaultProtocolClient } from "./utils/setAsDefaultProtocolClient";
 import { isDeckGameMode } from "./utils/steamOS";
 
-console.log("Equibop v" + app.getVersion());
+console.log("Testktop v" + app.getVersion());
 
-process.env.EQUICORD_USER_DATA_DIR = DATA_DIR;
+process.env.TESTCORD_USER_DATA_DIR = DATA_DIR;
 
 const isLinux = process.platform === "linux";
 

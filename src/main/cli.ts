@@ -71,12 +71,12 @@ const extraOptions = {
     "enable-features": {
         type: "string",
         description: "Enable specific Chromium features",
-        argumentName: "feature1,feature2,…"
+        argumentName: "feature1,feature2,â€¦"
     },
     "disable-features": {
         type: "string",
         description: "Disable specific Chromium features",
-        argumentName: "feature1,feature2,…"
+        argumentName: "feature1,feature2,â€¦"
     },
     "ozone-platform": {
         hidden: process.platform !== "linux",
@@ -102,12 +102,12 @@ export async function checkCommandLineForRepair() {
     if (!repair) return false;
 
     const { State } = await import("./settings");
-    if (State.store.equicordDir) {
-        console.error("Cannot repair: using custom Equicord directory. Remove it in settings first.");
+    if (State.store.testcordDir) {
+        console.error("Cannot repair: using custom Testcord directory. Remove it in settings first.");
         process.exit(1);
     }
 
-    console.log("Repairing Equicord...");
+    console.log("Repairing Testktop...");
     const { downloadVencordAsar } = await import("./utils/vencordLoader");
     await downloadVencordAsar();
     console.log("Repair complete.");
@@ -119,13 +119,13 @@ export function checkCommandLineForHelpOrVersion() {
     const { help, version } = CommandLine.values;
 
     if (version) {
-        console.log(`Equibop v${app.getVersion()}`);
+        console.log(`Testktop v${app.getVersion()}`);
         app.exit(0);
     }
 
     if (help) {
         const base = stripIndent`
-            Equibop v${app.getVersion()}
+            Testktop v${app.getVersion()}
 
             Usage: ${basename(process.execPath)} [options] [url]
 

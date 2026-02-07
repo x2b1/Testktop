@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { BaseText, Button, Heading, Paragraph, TextButton } from "@equicord/types/components";
+import { BaseText, Button, Heading, Paragraph, TextButton } from "@testcord/types/components";
 import {
     Margins,
     ModalCloseButton,
@@ -14,8 +14,8 @@ import {
     ModalSize,
     openModal,
     useForceUpdater
-} from "@equicord/types/utils";
-import { Toasts } from "@equicord/types/webpack/common";
+} from "@testcord/types/utils";
+import { Toasts } from "@testcord/types/webpack/common";
 import { Settings } from "shared/settings";
 
 import { cl, SettingsComponent } from "./Settings";

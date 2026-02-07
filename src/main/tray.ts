@@ -272,7 +272,7 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                         case 2: // about
                             createAboutWindow();
                             break;
-                        case 3: // repair equicord
+                        case 3: // repair testktop
                             downloadVencordAsar().then(() => {
                                 setTimeout(() => {
                                     destroyTray();

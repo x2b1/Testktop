@@ -6,8 +6,8 @@
 
 import "./settings.css";
 
-import { classNameFactory } from "@equicord/types/api/Styles";
-import { BaseText, Divider, ErrorBoundary } from "@equicord/types/components";
+import { classNameFactory } from "@testcord/types/api/Styles";
+import { BaseText, Divider, ErrorBoundary } from "@testcord/types/components";
 import { ComponentType } from "react";
 import { Settings, useSettings } from "renderer/settings";
 import { isMac, isWindows } from "renderer/utils";

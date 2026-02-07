@@ -1,15 +1,15 @@
-# Equibop [<img src="/static/icon.png" width="225" align="right" alt="Equibop">](https://github.com/Equicord/Equibop)
+# Testktop [<img src="/static/icon.png" width="225" align="right" alt="Testktop">](https://github.com/x2b1/TestCord)
 
-[![Equicord](https://img.shields.io/badge/Equicord-grey?style=flat)](https://github.com/Equicord/Equicord)
-[![Tests](https://github.com/Equicord/Equibop/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Equicord/Equibop/actions/workflows/test.yml)
-[![Discord](https://img.shields.io/discord/1173279886065029291.svg?color=768AD4&label=Discord&logo=discord&logoColor=white)](https://equicord.org/discord)
+[![Testcord](https://img.shields.io/badge/Testcord-grey?style=flat)](https://github.com/x2b1/TestCord)
+[![Tests](https://github.com/x2b1/TestCord/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/x2b1/TestCord/actions/workflows/test.yml)
+[![Discord](https://img.shields.io/discord/1173279886065029291.svg?color=768AD4&label=Discord&logo=discord&logoColor=white)](https://testcord.org/discord)
 
-Equibop is a fork of [Vesktop](https://github.com/Vencord/Vesktop).
+Testktop is a fork of [Vesktop](https://github.com/Vencord/Vesktop).
 
-You can join our [discord server](https://equicord.org/discord) for commits, changes, chat or even support.<br></br>
+You can join our [discord server](https://testcord.org/discord) for commits, changes, chat or even support.<br></br>
 
 **Main features**:
-- Equicord preinstalled
+- Testcord preinstalled
 - Much more lightweight and faster than the official Discord app
 - Linux Screenshare with sound & wayland
 - Much better privacy, since Discord has no access to your system
@@ -18,7 +18,7 @@ You can join our [discord server](https://equicord.org/discord) for commits, cha
 
 - Tray Customization with voice detection and notification badges
 - Command-line flags to toggle microphone and deafen status (Linux)
-- Custom Arguments from [this PR](https://github.com/Equicord/Equibop/pull/46)
+- Custom Arguments from [this PR](https://github.com/Testcord/TestCord/pull/46)
 - arRPC-bun with debug logging support https://github.com/Creationsss/arrpc-bun
 
 **Linux Note**:
@@ -32,15 +32,15 @@ You can join our [discord server](https://equicord.org/discord) for commits, cha
 
 ### Runtime Flags
 These flags can be passed when launching the application  
-(or via `Right-click on the Equibop tray icon > Launch arguments`):
+(or via `Right-click on the testktop tray icon > Launch arguments`):
 
 ```bash
 --wayland
 ```
 > Forces the application to use the **Ozone Wayland** platform.  
 > Automatically enables:  
-> • `WaylandWindowDecorations`  
-> • `VaapiVideoDecodeLinuxGL` (hardware acceleration)
+> â€˘ `WaylandWindowDecorations`  
+> â€˘ `VaapiVideoDecodeLinuxGL` (hardware acceleration)
 
 **Alternative (basic Wayland):**
 ```bash
@@ -65,8 +65,8 @@ These arguments are parsed during the build process:
 --dev
 ```
 > Enables development mode.  
-> • Disables code minification  
-> • Sets `IS_DEV` to `true`
+> â€˘ Disables code minification  
+> â€˘ Sets `IS_DEV` to `true`
 
 ```bash
 --watch
@@ -78,7 +78,7 @@ These arguments are parsed during the build process:
 The launcher supports a flags file located at:
 
 ```
-${XDG_CONFIG_HOME}/equibop-flags.conf
+${XDG_CONFIG_HOME}/testktop-flags.conf
 ```
 
 **Rules:**
@@ -87,15 +87,15 @@ ${XDG_CONFIG_HOME}/equibop-flags.conf
 - Valid entries are appended to the execution command
 
 ## Installing
-Check the [Releases](https://github.com/Equicord/Equibop/releases) page
+Check the [Releases](https://github.com/x2b1/TestCord/releases) page
 
 OR
 
-Check The Downloads from the [website](https://equicord.org/download)
+Check The Downloads from the [website](https://testcord.org/download)
 
 ### Linux
 
-[![Equibop](https://img.shields.io/badge/AVAILABLE_ON_THE_AUR-333232?style=for-the-badge&logo=arch-linux&logoColor=0F94D2&labelColor=%23171717)](https://aur.archlinux.org/packages?O=0&K=equibop)
+[![Testktop](https://img.shields.io/badge/AVAILABLE_ON_THE_AUR-333232?style=for-the-badge&logo=arch-linux&logoColor=0F94D2&labelColor=%23171717)](https://aur.archlinux.org/packages?O=0&K=testktop)
 <br>
 <!-- <a href="https://flathub.org/apps/io.github.equicord.equibop">
   <img src="https://flathub.org/api/badge?svg" alt="Download on Flathub" style="width:220px; height:auto;">
@@ -105,8 +105,8 @@ Check The Downloads from the [website](https://equicord.org/download)
 
 Below you can find unofficial packages created by the community. They are not officially supported by us, so before reporting issues, please first confirm the issue also happens on official builds. When in doubt, consult with their packager first. The AppImage should work on any distro that supports them, so I recommend you just use that instead!
 
-- Arch Linux: [Equibop on the Arch user repository](https://aur.archlinux.org/packages?K=equibop)
-- NixOS: `nix-shell -p equibop`
+- Arch Linux: [Testktop on the Arch user repository](https://aur.archlinux.org/packages?K=testktop)
+- NixOS: `nix-shell -p testktop`
 
 ## Building from Source
 
@@ -117,7 +117,7 @@ You need to have the following dependencies installed:
 Packaging will create builds in the dist/ folder
 
 ```sh
-git clone https://github.com/Equicord/Equibop
+git clone https://github.com/x2b1/TestCord
 cd Equibop
 
 # Install Dependencies
