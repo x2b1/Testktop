@@ -4,7 +4,7 @@
 [![Tests](https://github.com/x2b1/TestCord/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/x2b1/TestCord/actions/workflows/test.yml)
 [![Discord](https://img.shields.io/discord/1173279886065029291.svg?color=768AD4&label=Discord&logo=discord&logoColor=white)](https://testcord.org/discord)
 
-Testktop is a fork of [Vesktop](https://github.com/Vencord/Vesktop).
+Testktop is a fork of [Equibop](https://github.com/Equicord/Equibop).
 
 You can join our [discord server](https://testcord.org/discord) for commits, changes, chat or even support.<br></br>
 
@@ -18,7 +18,7 @@ You can join our [discord server](https://testcord.org/discord) for commits, cha
 
 - Tray Customization with voice detection and notification badges
 - Command-line flags to toggle microphone and deafen status (Linux)
-- Custom Arguments from [this PR](https://github.com/Testcord/TestCord/pull/46)
+- Custom Arguments from [this PR](https://github.com/Equicord/Equicord/pull/46)
 - arRPC-bun with debug logging support https://github.com/Creationsss/arrpc-bun
 
 **Linux Note**:
@@ -87,26 +87,7 @@ ${XDG_CONFIG_HOME}/testktop-flags.conf
 - Valid entries are appended to the execution command
 
 ## Installing
-Check the [Releases](https://github.com/x2b1/TestCord/releases) page
-
-OR
-
-Check The Downloads from the [website](https://testcord.org/download)
-
-### Linux
-
-[![Testktop](https://img.shields.io/badge/AVAILABLE_ON_THE_AUR-333232?style=for-the-badge&logo=arch-linux&logoColor=0F94D2&labelColor=%23171717)](https://aur.archlinux.org/packages?O=0&K=testktop)
-<br>
-<!-- <a href="https://flathub.org/apps/io.github.equicord.equibop">
-  <img src="https://flathub.org/api/badge?svg" alt="Download on Flathub" style="width:220px; height:auto;">
-</a> -->
-
-#### Community packages
-
-Below you can find unofficial packages created by the community. They are not officially supported by us, so before reporting issues, please first confirm the issue also happens on official builds. When in doubt, consult with their packager first. The AppImage should work on any distro that supports them, so I recommend you just use that instead!
-
-- Arch Linux: [Testktop on the Arch user repository](https://aur.archlinux.org/packages?K=testktop)
-- NixOS: `nix-shell -p testktop`
+Check the [Releases](https://github.com/x2b1/Testktop/releases) page
 
 ## Building from Source
 
@@ -117,8 +98,8 @@ You need to have the following dependencies installed:
 Packaging will create builds in the dist/ folder
 
 ```sh
-git clone https://github.com/x2b1/TestCord
-cd Equibop
+git clone https://github.com/x2b1/Testktop
+cd Testktop
 
 # Install Dependencies
 bun install
@@ -145,4 +126,4 @@ If you want to build it from source:
     - Debian/Ubuntu: `apt install build-essential python3 curl pkg-config libglib2.0-dev`
     - Fedora: `dnf install @c-development @development-tools python3 curl pkgconf-pkg-config glib2-devel`
 2. Run `bun buildLibVesktop`
-3. From now on, building Equibop will use your own build
+3. From now on, building Testktop will use your own build
