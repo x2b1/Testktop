@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { useEffect, useReducer } from "@testcord/types/webpack/common";
+import { useEffect, useReducer } from "@equicord/types/webpack/common";
 import { SettingsStore } from "shared/utils/SettingsStore";
 
 import { VesktopLogger } from "./logger";

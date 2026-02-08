@@ -6,7 +6,7 @@
     "keywords": [],
     "homepage": "https://github.com/x2b1/TestCord",
     "license": "GPL-3.0-or-later",
-    "author": "Testcord <contact@testcord.org>",
+    "author": "Testcord <x2b0@proton.me>",
     "main": "dist/js/main.js",
     "scripts": {
         "build": "bun run scripts/build/build.mts",
@@ -40,7 +40,7 @@
         "@vencord/venmic": "^6.1.0"
     },
     "devDependencies": {
-        "@testcord/types": "^1.14.1",
+        "@equicord/types": "^1.14.1",
         "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
         "@stylistic/eslint-plugin": "^5.7.1",
         "@types/node": "^25.0.10",
@@ -91,7 +91,7 @@
         "linux": {
             "icon": "build/icon.svg",
             "category": "Network",
-            "maintainer": "contact@testcord.org",
+            "maintainer": "x2b1@proton.me",
             "target": [
                 {
                     "target": "deb",

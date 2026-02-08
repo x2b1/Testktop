@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { filters, waitFor } from "@testcord/types/webpack";
-import { RelationshipStore } from "@testcord/types/webpack/common";
+import { filters, waitFor } from "@equicord/types/webpack";
+import { RelationshipStore } from "@equicord/types/webpack/common";
 
 import { VesktopLogger } from "./logger";
 import { Settings } from "./settings";

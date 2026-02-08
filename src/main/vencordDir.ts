@@ -12,4 +12,4 @@ import { State } from "./settings";
 // this is in a separate file to avoid circular dependencies
 export const VENCORD_DIR = State.store.testcordDir
     ? join(State.store.testcordDir, "testktop")
-    : join(SESSION_DATA_DIR, "testcord.asar");
+    : join(SESSION_DATA_DIR, "testktop.asar");

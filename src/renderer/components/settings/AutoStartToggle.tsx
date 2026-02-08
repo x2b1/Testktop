@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { useState } from "@testcord/types/webpack/common";
+import { useState } from "@equicord/types/webpack/common";
 
 import { SettingsComponent } from "./Settings";
 import { VesktopSettingsSwitch } from "./VesktopSettingsSwitch";

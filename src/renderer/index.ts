@@ -37,10 +37,10 @@ customEntries.push({
 });
 
 customSections.push(() => ({
-    section: "EquibopSettings",
-    label: "Equibop Settings",
+    section: "TestktopSettings",
+    label: "Testktop Settings",
     element: SettingsUi,
-    className: "vc-equibop-settings"
+    className: "vc-testktop-settings"
 }));
 
 VesktopNative.voice.onToggleSelfMute(() => VoiceActions.toggleSelfMute());

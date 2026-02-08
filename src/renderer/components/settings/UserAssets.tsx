@@ -6,7 +6,7 @@
 
 import "./UserAssets.css";
 
-import { BaseText, Button, FormSwitch } from "@testcord/types/components";
+import { BaseText, Button, FormSwitch } from "@equicord/types/components";
 import {
     Margins,
     ModalCloseButton,
@@ -17,8 +17,8 @@ import {
     openModal,
     wordsFromCamel,
     wordsToTitle
-} from "@testcord/types/utils";
-import { showToast, useState } from "@testcord/types/webpack/common";
+} from "@equicord/types/utils";
+import { showToast, useState } from "@equicord/types/webpack/common";
 import { UserAssetType } from "main/userAssets";
 import { useSettings } from "renderer/settings";
 

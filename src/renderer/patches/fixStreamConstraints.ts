@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { Logger } from "@testcord/types/utils";
-import { MediaEngineStore } from "@testcord/types/webpack/common";
+import { Logger } from "@equicord/types/utils";
+import { MediaEngineStore } from "@equicord/types/webpack/common";
 
 const logger = new Logger("VesktopStreamFixes");
 

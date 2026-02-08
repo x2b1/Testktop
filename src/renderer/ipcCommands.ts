@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { SettingsRouter } from "@testcord/types/webpack/common";
+import { SettingsRouter } from "@equicord/types/webpack/common";
 import { IpcCommands } from "shared/IpcEvents";
 
 import { openScreenSharePicker } from "./components/ScreenSharePicker";

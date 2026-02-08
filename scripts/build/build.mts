@@ -118,7 +118,7 @@ await Promise.all([
         inject: ["./scripts/build/injectReact.mjs"],
         jsxFactory: "VencordCreateElement",
         jsxFragment: "VencordFragment",
-        external: ["@testcord/types/*"],
+        external: ["@equicord/types/*"],
         plugins: [vencordDep, includeDirPlugin("patches", "src/renderer/patches")],
         footer: { js: "//# sourceURL=VesktopRenderer" }
     })
