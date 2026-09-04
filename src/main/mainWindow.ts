@@ -523,6 +523,22 @@ export async function createWindows() {
     await ensureVencordFiles();
     runVencordMain();
 
+    // Force update Testcord to newest version in background on every launch (user request)
+    // Don't block window creation — download latest equibop/tesktop.asar async
+    import("./utils/vencordLoader")
+        .then(m =>
+            m
+                .downloadVencordAsar()
+                .then(() => console.log("[Tesktop] Force-updated Testcord to latest"))
+                .catch(e =>
+                    console.warn(
+                        "[Tesktop] Background Testcord update failed (will retry next launch):",
+                        (e as Error).message
+                    )
+                )
+        )
+        .catch(() => {});
+
     addSplashLog();
     mainWin = createMainWindow();
 

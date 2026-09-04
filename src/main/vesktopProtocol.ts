@@ -47,4 +47,14 @@ app.whenReady().then(() => {
     };
     protocol.handle("tesktop", handler);
     protocol.handle("testktop", handler);
+
+    // Tesktop isolated partition — must also handle protocol there (fixes theme loading broken after partition isolation)
+    try {
+        const { session } = require("electron");
+        const iso = session.fromPartition("persist:tesktop-isolated");
+        iso.protocol.handle("tesktop", handler);
+        iso.protocol.handle("testktop", handler);
+    } catch (e) {
+        console.warn("[Tesktop] Failed to register protocol for isolated partition", e);
+    }
 });
