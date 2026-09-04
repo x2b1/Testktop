@@ -37,12 +37,25 @@ export async function githubGet(endpoint: string) {
 }
 
 export async function downloadVencordAsar() {
-    await downloadFile(
+    const urls = [
         "https://github.com/x2b1/Testcord/releases/latest/download/tesktop.asar",
-        VENCORD_DIR,
-        {},
-        { retryOnNetworkError: true }
-    );
+        "https://github.com/x2b1/Testcord/releases/latest/download/equibop.asar",
+        "https://github.com/Equicord/Equicord/releases/latest/download/equibop.asar"
+    ];
+
+    let lastError: unknown;
+    for (const url of urls) {
+        try {
+            console.log(`[Tesktop] Trying to download ${url} ...`);
+            await downloadFile(url, VENCORD_DIR, {}, { retryOnNetworkError: true });
+            console.log(`[Tesktop] Downloaded from ${url}`);
+            return;
+        } catch (e) {
+            console.warn(`[Tesktop] Failed to download from ${url}:`, (e as Error).message);
+            lastError = e;
+        }
+    }
+    throw lastError;
 }
 
 export function isValidVencordInstall(dir: string) {
@@ -52,5 +65,18 @@ export function isValidVencordInstall(dir: string) {
 export async function ensureVencordFiles() {
     if (existsSync(VENCORD_DIR)) return;
 
-    await downloadVencordAsar();
+    try {
+        await downloadVencordAsar();
+    } catch (e) {
+        console.error(
+            "[Tesktop] Failed to download Testcord/Euibop asar, app will start without mods. You can use --repair to retry:",
+            e
+        );
+        // Do not throw — let app continue; user can repair later
+        // Clean up partial file if exists
+        try {
+            const { unlinkSync } = await import("fs");
+            if (existsSync(VENCORD_DIR)) unlinkSync(VENCORD_DIR);
+        } catch {}
+    }
 }

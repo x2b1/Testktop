@@ -36,7 +36,7 @@ function init() {
     if (Settings.store.spoofChrome === undefined) Settings.store.spoofChrome = true;
     if (Settings.store.domOptimizer === undefined) Settings.store.domOptimizer = true;
     if (Settings.store.renderingOptimizations === undefined) Settings.store.renderingOptimizations = true;
-    if (Settings.store.tabsEnabled === undefined) Settings.store.tabsEnabled = true;
+    if (Settings.store.tabsEnabled === undefined) Settings.store.tabsEnabled = false;
     if (Settings.store.tabsPosition === undefined) Settings.store.tabsPosition = "top";
 
     // Apply GoofCord performance flags early
@@ -61,6 +61,10 @@ function init() {
     } else {
         if (isLinux) {
             disabledFeatures.add("WaylandWpColorManagerV1");
+            // Wayland + Vulkan are incompatible — disable Vulkan on Wayland (GoofCord parity, fixes ui/ozone error)
+            if (process.env.XDG_SESSION_TYPE === "wayland" || !!process.env.WAYLAND_DISPLAY) {
+                disabledFeatures.add("Vulkan");
+            }
         }
 
         if (hardwareVideoAcceleration) {
@@ -118,6 +122,18 @@ function init() {
     if (isLinux) {
         app.commandLine.appendSwitch("enable-speech-dispatcher");
         app.commandLine.appendSwitch("log-level", "3");
+    }
+
+    // Ensure Vulkan is disabled on Wayland regardless of how Wayland was requested
+    const isWaylandEnv = process.env.XDG_SESSION_TYPE === "wayland" || !!process.env.WAYLAND_DISPLAY;
+    const wantsWayland =
+        isWaylandEnv ||
+        (launchArguments && launchArguments.includes("wayland")) ||
+        app.commandLine.getSwitchValue("ozone-platform") === "wayland" ||
+        process.argv.includes("--wayland");
+    if (isLinux && wantsWayland) {
+        disabledFeatures.add("Vulkan");
+        enabledFeatures.delete("Vulkan");
     }
 
     disabledFeatures.forEach(feat => enabledFeatures.delete(feat));
