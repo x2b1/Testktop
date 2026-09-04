@@ -350,7 +350,6 @@ function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
             devTools: true,
             preload: join(__dirname, "preload.js"),
             spellcheck: true,
-            partition: "persist:tesktop-isolated",
             ...(Settings.store.middleClickAutoscroll && {
                 enableBlinkFeatures: "MiddleClickAutoscroll"
             }),
