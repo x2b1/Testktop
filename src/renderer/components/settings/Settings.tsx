@@ -239,8 +239,9 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
             key: "tabsEnabled",
             title: "Enable Tesktop Tabs",
             description:
-                "Show modern browser-like tabs at top for multi-guild navigation. Tesktop innovation — sleek, smooth & private. (Disabled by default)",
-            defaultValue: false
+                "Show modern browser-like tabs at top for multi-guild navigation. Tesktop innovation — sleek, smooth & private. (FORCE DISABLED — wrongly integrated, will return)",
+            defaultValue: false,
+            disabled: () => true
         },
         {
             key: "tabsShowNavigationButtons",

@@ -72,18 +72,9 @@ VesktopNative.voice.onToggleVAD(() => {
         console.warn("[Tesktop] GoofCord patches failed", e);
     }
 
-    // Innovative Tabs — mount if enabled (vanilla, lightweight)
-    try {
-        const settings = VesktopNative.settings.get();
-        if (settings.tabsEnabled !== false) {
-            const { mountTesktopTabs } = await import("./components/tabs/TesktopTabs");
-            const mount = () => mountTesktopTabs();
-            if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount, { once: true });
-            else mount();
-        }
-    } catch (e) {
-        console.warn("[Tesktop] Tabs failed", e);
-    }
+    // Innovative Tabs — FORCE DISABLED for now (wrongly integrated)
+    // if (settings.tabsEnabled) { mountTesktopTabs() }
+    void 0;
 })();
 
 // TODO: remove this legacy workaround once some time has passed

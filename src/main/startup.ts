@@ -36,7 +36,8 @@ function init() {
     if (Settings.store.spoofChrome === undefined) Settings.store.spoofChrome = true;
     if (Settings.store.domOptimizer === undefined) Settings.store.domOptimizer = true;
     if (Settings.store.renderingOptimizations === undefined) Settings.store.renderingOptimizations = true;
-    if (Settings.store.tabsEnabled === undefined) Settings.store.tabsEnabled = false;
+    // Tabs force-disabled for now (wrongly integrated)
+    Settings.store.tabsEnabled = false;
     if (Settings.store.tabsPosition === undefined) Settings.store.tabsPosition = "top";
 
     // Apply GoofCord performance flags early
