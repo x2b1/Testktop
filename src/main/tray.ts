@@ -272,7 +272,7 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                                     );
                                 });
                             break;
-                        case 4: // reset Equibop
+                        case 4: // reset Tesktop
                             clearData(win);
                             break;
                         case 5: // launch arguments

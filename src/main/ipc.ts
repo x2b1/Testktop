@@ -61,7 +61,7 @@ if (IS_DEV) {
 
 handleSync(IpcEvents.GET_SETTINGS, () => Settings.plain);
 handleSync(IpcEvents.GET_VERSION, () => app.getVersion());
-handleSync(IpcEvents.GET_GIT_HASH, () => EQUIBOP_GIT_HASH);
+handleSync(IpcEvents.GET_GIT_HASH, () => TESKTOP_GIT_HASH);
 handleSync(IpcEvents.GET_ENABLE_HARDWARE_ACCELERATION, () => enableHardwareAcceleration);
 
 handleSync(

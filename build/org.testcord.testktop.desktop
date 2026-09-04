@@ -5,6 +5,6 @@ Type=Application
 Exec=testktop %U
 Icon=org.testcord.testktop
 Categories=Network;InstantMessaging;Chat;
-Keywords=discord;vencord;electron;chattestktop;
+Keywords=discord;vencord;electron;chat;tesktop;testcord;
 MimeType=x-scheme-handler/discord;
 StartupWMClass=testktop

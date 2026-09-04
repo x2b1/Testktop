@@ -4,15 +4,39 @@
 [![Tests](https://github.com/x2b1/TestCord/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/x2b1/TestCord/actions/workflows/test.yml)
 [![Discord](https://img.shields.io/discord/1173279886065029291.svg?color=768AD4&label=Discord&logo=discord&logoColor=white)](https://testcord.org/discord)
 
-Testktop is a fork of [Equibop](https://github.com/Equicord/Equibop).
+Testktop is a fork of [Equibop](https://github.com/Equicord/Equibop) (fork of Vesktop) — now fused with [GoofCord](https://github.com/Milkshiift/GoofCord) for the ultimate Discord desktop.
+
+> **Tesktop v3.2.2** — One stable name. All features. Modern, smooth & private by default.
 
 You can join our [discord server](https://testcord.org/discord) for commits, changes, chat or even support.<br></br>
 
-**Main features**:
-- Testcord preinstalled
-- Much more lightweight and faster than the official Discord app
-- Linux Screenshare with sound & wayland
-- Much better privacy, since Discord has no access to your system
+**Why Tesktop? Unified & Innovative**
+- **Single stable identity:** everything is `Tesktop` / `tesktop` — no more equibop/testktop confusion
+- **GoofCord + Equibop combined:** all privacy, smoothness and QoL from both worlds
+- **Innovative Tabs:** modern browser-like tab strip (drag, close, badges) built-in — switch guilds/channels without new windows
+- **New Testcord Orange Logo:** fresh #CC5F00 TC branding with tab + privacy shield accents
+
+**Core (Equibop) features**
+- Testcord preinstalled (latest `tesktop.asar` from TestCord releases)
+- Lightweight & faster than official Discord (Electron 43, no bloat)
+- Linux Screenshare with sound & Wayland, PipeWire
+- Tray with voice detection badges (speaking / muted / deafened / idle / unread)
+- CLI toggles for mic/deafen/VAD, query commands (is-in-call, channel name, duration)
+
+**GoofCord Privacy (now in Tesktop)**
+- **Firewall** — blocks `sentry`, `science`, `tracking`, `analytics`, `doubleclick` by default; toggleable + custom blocklist/allowlist (GoofCord default lists)
+- **Spoof Chrome & Windows** — real Chrome UA + Client Hints via debugger (helps VPN bypass, fingerprint resistance)
+- **Proxy** — custom `proxyRules` / `proxyBypassRules` for Discord traffic
+- **Invidious embeds** — YouTube → privacy Invidious instance (auto-switch optional)
+- **Message Encryption** — GoofCord stegcloak-inspired (stub: Tesktop Secure Chat helper + future stegcloak-rs)
+- **CSP relax & unstrict** for custom assets
+
+**GoofCord Smoothness (now in Tesktop)**
+- **DOM Optimizer** — defers heavy `removeChild` for `.activity/.gif/.avatar` → fewer jank frames
+- **Rendering Optimizations** — `contain: strict`, `will-change`, `content-visibility: auto` for scrollers & message wrappers
+- **Performance Flags** — `CanvasOopRasterization`, `enable-zero-copy`, `ignore-gpu-blocklist`, hardware-overlays
+- **Force Dedicated GPU / disable compositing / VA-API** toggles (Linux)
+- **YouTube adblocker** for embeds (GoofCord assets/adblocker.js-lite)
 
 **Extra included changes**
 
@@ -20,9 +44,11 @@ You can join our [discord server](https://testcord.org/discord) for commits, cha
 - Command-line flags to toggle microphone and deafen status (Linux)
 - Custom Arguments from [this PR](https://github.com/Equicord/Equicord/pull/46)
 - arRPC-bun with debug logging support https://github.com/Creationsss/arrpc-bun
+- Preconnect to Discord + dynamic icon + window state memory
 
 **Not fully Supported**:
 - Global Keybinds (Windows/macOS - use command-line flags on Linux instead)
+- Message Encryption full stegcloak requires `stegcloak-rs` + GoofCord native module (currently stub, will auto-upgrade)
 
 ## Tesktop Arguments
 > [!NOTE]
@@ -110,7 +136,7 @@ bun package:dir
 
 ## Building LibVesktop from Source
 
-This is a small C++ helper library Equibop uses on Linux to emit D-Bus events. By default, prebuilt binaries for x64 and arm64 are used.
+This is a small C++ helper library Tesktop uses on Linux to emit D-Bus events. By default, prebuilt binaries for x64 and arm64 are used.
 
 If you want to build it from source:
 1. Install build dependencies:

@@ -16,7 +16,7 @@ export function OutdatedVesktopWarning() {
 
     return (
         <Card variant="warning" className={cl("updater-card")}>
-            <HeadingTertiary>Your Equibop is outdated!</HeadingTertiary>
+            <HeadingTertiary>Your Tesktop is outdated!</HeadingTertiary>
             <Paragraph>Staying up to date is important for security and stability.</Paragraph>
             <Button onClick={() => VesktopNative.app.openUpdater()} variant="secondary">
                 Open Updater

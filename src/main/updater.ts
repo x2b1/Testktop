@@ -45,7 +45,7 @@ handle(IpcEvents.UPDATER_OPEN, async () => {
 
 function openUpdater(update: UpdateInfo) {
     updaterWindow = new BrowserWindow({
-        title: "Equibop Updater",
+        title: "Tesktop Updater",
         autoHideMenuBar: true,
         ...(process.platform === "win32"
             ? { icon: join(STATIC_DIR, "icon.ico") }

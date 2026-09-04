@@ -29,7 +29,7 @@ function Fallback() {
         <Card variant="danger">
             <HeadingTertiary>Something went wrong.</HeadingTertiary>
             <Paragraph>
-                Please make sure Equicord and Equibop are fully up to date. You can get help in our{" "}
+                Please make sure Testcord and Tesktop are fully up to date. You can get help in our{" "}
                 <TextButton variant="link" onClick={openSupportChannel}>
                     Support Channel
                 </TextButton>

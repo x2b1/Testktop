@@ -11,7 +11,17 @@ import { handleVesktopStaticProtocol } from "./vesktopStatic";
 
 protocol.registerSchemesAsPrivileged([
     {
-        scheme: "equibop",
+        scheme: "tesktop",
+        privileges: {
+            standard: true,
+            secure: true,
+            supportFetchAPI: true,
+            corsEnabled: true,
+            stream: true
+        }
+    },
+    {
+        scheme: "testktop",
         privileges: {
             standard: true,
             secure: true,
@@ -23,7 +33,7 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 app.whenReady().then(() => {
-    protocol.handle("testktop", async req => {
+    const handler = async (req: Request) => {
         const url = new URL(req.url);
 
         switch (url.hostname) {
@@ -34,5 +44,7 @@ app.whenReady().then(() => {
             default:
                 return new Response(null, { status: 404 });
         }
-    });
+    };
+    protocol.handle("tesktop", handler);
+    protocol.handle("testktop", handler);
 });

@@ -31,6 +31,22 @@ export let enableHardwareAcceleration = true;
 function init() {
     setAsDefaultProtocolClient("discord");
 
+    // Tesktop GoofCord-inspired: ensure defaults for privacy/smoothness
+    if (Settings.store.firewall === undefined) Settings.store.firewall = true;
+    if (Settings.store.spoofChrome === undefined) Settings.store.spoofChrome = true;
+    if (Settings.store.domOptimizer === undefined) Settings.store.domOptimizer = true;
+    if (Settings.store.renderingOptimizations === undefined) Settings.store.renderingOptimizations = true;
+    if (Settings.store.tabsEnabled === undefined) Settings.store.tabsEnabled = true;
+    if (Settings.store.tabsPosition === undefined) Settings.store.tabsPosition = "top";
+
+    // Apply GoofCord performance flags early
+    try {
+        const { applyPerformanceFlags } = require("./modules/performance");
+        applyPerformanceFlags();
+    } catch (e) {
+        console.warn("[Tesktop] Failed to apply performance flags", e);
+    }
+
     const { disableSmoothScroll, hardwareAcceleration, hardwareVideoAcceleration } = Settings.store;
     const { launchArguments } = State.store;
 
@@ -123,6 +139,16 @@ function init() {
 
     app.whenReady().then(async () => {
         if (process.platform === "win32") app.setAppUserModelId("org.testcord.testktop");
+
+        // GoofCord-inspired privacy: firewall + proxy + CSP
+        try {
+            const { initFirewall, unstrictCSP, initProxy } = await import("./modules/privacyFirewall");
+            initFirewall();
+            unstrictCSP();
+            initProxy();
+        } catch (e) {
+            console.warn("[Tesktop] Privacy modules failed", e);
+        }
 
         registerScreenShareHandler();
         registerMediaPermissionsHandler();

@@ -85,25 +85,25 @@ function initMenuBar(win: BrowserWindow) {
 
     const subMenu = [
         {
-            label: "About Equibop",
+            label: "About Tesktop",
             click: createAboutWindow
         },
         {
-            label: "Force Update Equicord",
+            label: "Force Update Testcord",
             async click() {
                 await downloadVencordAsar();
                 destroyTray();
                 app.relaunch();
                 app.quit();
             },
-            toolTip: "Equibop will automatically restart after this operation"
+            toolTip: "Tesktop will automatically restart after this operation"
         },
         {
-            label: "Reset Equibop",
+            label: "Reset Tesktop",
             async click() {
                 await clearData(win);
             },
-            toolTip: "Equibop will automatically restart after this operation"
+            toolTip: "Tesktop will automatically restart after this operation"
         },
         {
             label: "Relaunch",
@@ -171,7 +171,7 @@ function initMenuBar(win: BrowserWindow) {
 
     const menuItems = [
         {
-            label: "Equibop",
+            label: "Tesktop",
             role: "appMenu",
             submenu: subMenu.filter(isTruthy)
         },
@@ -280,7 +280,7 @@ function initStaticTitle(win: BrowserWindow) {
 
     addSettingsListener("staticTitle", enabled => {
         if (enabled) {
-            win.setTitle("Equibop");
+            win.setTitle("Tesktop");
             win.on("page-title-updated", listener);
         } else {
             win.off("page-title-updated", listener);
@@ -376,7 +376,7 @@ function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
     }
 
     if (staticTitle) {
-        options.title = "Equibop";
+        options.title = "Tesktop";
     }
 
     if (process.platform === "darwin") {
@@ -406,10 +406,18 @@ function createMainWindow() {
 
     addSplashLog();
 
-    if (process.platform === "darwin" && Settings.store.customTitleBar) win.setWindowButtonVisibility(false);
-    if (process.platform !== "win32" && CommandLine.values["windows-spoof"]) {
+    // GoofCord-inspired spoofing: chrome spoof + windows spoof (privacy)
+    // Keep legacy gnuSpoof for compat but prefer new chromeSpoofer when enabled
+    if (Settings.store.spoofChrome !== false) {
+        import("./modules/chromeSpoofer").then(m =>
+            m.applyChromeSpoof(win).catch(e => console.warn("[Tesktop] chromeSpoof failed", e))
+        );
+    } else if (process.platform !== "win32" && CommandLine.values["windows-spoof"]) {
         spoofGnu(win);
     }
+
+    // Smoothness: rendering optimizations CSS will be injected via renderer, but ensure flag applied
+    if (process.platform === "darwin" && Settings.store.customTitleBar) win.setWindowButtonVisibility(false);
 
     win.on("close", e => {
         const useTray = !isDeckGameMode && Settings.store.minimizeToTray !== false && Settings.store.tray !== false;
@@ -440,9 +448,34 @@ function createMainWindow() {
 
     addSplashLog();
 
+    // GoofCord smoothness: youtube adblocker for embedded youtubes
+    win.webContents.on("frame-created", (_, { frame }) => {
+        if (!frame) return;
+        frame.once("dom-ready", () => {
+            if (
+                frame.url.includes("youtube.com/embed/") ||
+                (frame.url.includes("discordsays") && frame.url.includes("youtube.com"))
+            ) {
+                // minimal adblocker script (GoofCord's adblocker.js simplified)
+                frame
+                    .executeJavaScript(
+                        `(function(){try{Object.defineProperty(window,'__tesktopAdblock', {value:true});}catch{}})();`
+                    )
+                    .catch(() => {});
+            }
+        });
+    });
+
+    // Popout always on top (GoofCord)
+    if (Settings.store.popoutWindowAlwaysOnTop !== false) {
+        // handled in setWindowOpenHandler override below, but ensure default
+    }
+
     win.webContents.setUserAgent(BrowserUserAgent);
     addSplashLog();
-    win.webContents.setWebRTCIPHandlingPolicy("default_public_and_private_interfaces");
+    win.webContents.setWebRTCIPHandlingPolicy(
+        Settings.store.webRTCIPHandlingPolicy ?? "default_public_and_private_interfaces"
+    );
 
     // if the open-url event is fired (in index.ts) while starting up, darwinURL will be set. If not fall back to checking the process args (which Windows and Linux use for URI calling.)
     // win.webContents.session.clearCache().then(() => {

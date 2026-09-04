@@ -290,7 +290,7 @@
             <div class="setting">
                 <div class="setting-info">
                     <div class="setting-title">Use Built-in Server</div>
-                    <div class="setting-description">Use Equibop's integrated arRPC server</div>
+                    <div class="setting-description">Use Tesktop's integrated arRPC server</div>
                 </div>
                 <div class="toggle" id="toggle-builtin"></div>
             </div>
@@ -514,7 +514,7 @@
         if (status.lastError && !status.isReady) {
             let hint = "";
             if (/binary not found/i.test(status.lastError)) {
-                hint = " \u2014 install arrpc-bun via your package manager (AUR, brew, nix, etc.) or reinstall Equibop.";
+                hint = " \u2014 install arrpc-bun via your package manager (AUR, brew, nix, etc.) or reinstall Tesktop.";
             } else if (/SIGILL/.test(status.lastError)) {
                 hint = " \u2014 the bundled arRPC binary is built for a different CPU architecture.";
             } else if (/timeout/i.test(status.lastError)) {

@@ -47,6 +47,44 @@ export interface Settings {
 
     spellCheckLanguages?: string[];
 
+    // === Tesktop GoofCord-inspired Privacy & Smoothness ===
+    // Privacy
+    firewall?: boolean;
+    customFirewallRules?: boolean;
+    blocklist?: string[];
+    blockedStrings?: string[];
+    allowedStrings?: string[];
+    proxyEnabled?: boolean;
+    proxyRules?: string;
+    proxyBypassRules?: string;
+    spoofChrome?: boolean;
+    spoofWindows?: boolean;
+    invidiousEmbeds?: boolean;
+    invidiousInstance?: string;
+    autoUpdateInvidiousInstance?: boolean;
+    messageEncryption?: boolean;
+    encryptionPasswords?: string[];
+    encryptionCover?: string;
+    encryptionMark?: string;
+
+    // Performance & Smoothness
+    domOptimizer?: boolean;
+    renderingOptimizations?: boolean;
+    forceDedicatedGPU?: boolean;
+    performanceFlags?: boolean;
+    vaapi?: boolean;
+    disableGpuCompositing?: boolean;
+    disableSettingsAnimations?: boolean;
+    autoscroll?: boolean;
+    popoutWindowAlwaysOnTop?: boolean;
+    customIconPath?: string;
+    trayIconStyle?: "default" | "symbolic_black" | "symbolic_white";
+
+    // Innovative Tabs
+    tabsEnabled?: boolean;
+    tabsPosition?: "top" | "left" | "hidden";
+    tabsShowNavigationButtons?: boolean;
+
     audio?: {
         workaround?: boolean;
 

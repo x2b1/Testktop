@@ -36,7 +36,7 @@ export const WindowsTransparencyControls: SettingsComponent = ({ settings }) => 
                         },
                         { label: "Tabbed (variant of Mica with stronger background tinting)", value: "tabbed" },
                         {
-                            label: "Acrylic (blurs the window behind Equibop for a translucent background)",
+                            label: "Acrylic (blurs the window behind Tesktop for a translucent background)",
                             value: "acrylic"
                         }
                     ]}
