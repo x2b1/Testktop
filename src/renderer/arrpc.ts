@@ -33,6 +33,8 @@ interface ActivityAssets {
     small_text?: string;
 }
 
+let userDisabledStreamerMode = false;
+
 interface Activity {
     application_id: string;
     name?: string;
@@ -97,11 +99,19 @@ async function handleActivityEvent(data: ActivityEvent) {
     if (data.socketId === "STREAMERMODE" || activity?.application_id === "STREAMERMODE") {
         if (StreamerModeStore.autoToggle) {
             const shouldEnable = activity != null;
+
+            if (!shouldEnable) {
+                userDisabledStreamerMode = false;
+            } else if (userDisabledStreamerMode) {
+                return;
+            }
+
             logger.info(`Toggling streamer mode: ${shouldEnable ? "ON" : "OFF"}`);
             FluxDispatcher.dispatch({
                 type: "STREAMER_MODE_UPDATE",
                 key: "enabled",
-                value: shouldEnable
+                value: shouldEnable,
+                isAuto: true
             });
         }
         return;
@@ -123,6 +133,14 @@ async function handleActivityEvent(data: ActivityEvent) {
 VesktopNative.arrpc.onActivity(async (data: ActivityEvent) => {
     await onceReady;
     handleActivityEvent(data);
+});
+
+onceReady.then(() => {
+    FluxDispatcher.subscribe("STREAMER_MODE_UPDATE", e => {
+        if (!e.isAuto && !e.value) {
+            userDisabledStreamerMode = true;
+        }
+    });
 });
 
 logger.info("arRPC bridge initialized (main process handles connection)");

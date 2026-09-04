@@ -79,12 +79,34 @@
         #save {
             background: #5865f2;
         }
+
+        .examples {
+            margin-top: 0.8em;
+            font-size: 0.8rem;
+            color: var(--fg-secondary);
+        }
+
+        .examples ul {
+            margin: 0.4em 0 0;
+            padding-left: 1.2em;
+            font-family: monospace;
+        }
+
+        .examples li {
+            margin-bottom: 0.2em;
+        }
+
+        .examples code {
+            background: var(--bg);
+            padding: 0 0.3em;
+            border-radius: 3px;
+        }
     </style>
 </head>
 
 <body>
     <h1>Launch Arguments</h1>
-    <p>Configure additional command-line arguments passed to Discord. Changes require a restart.</p>
+    <p>Space-separated Chromium / Electron flags passed to Discord on launch. Changes require a restart.</p>
 
     <div class="warning">
         Only use arguments you understand. Incorrect arguments may cause instability or security issues.
@@ -92,7 +114,18 @@
 
     <input type="text" id="args" placeholder="--force_high_performance_gpu" />
 
+    <div class="examples">
+        Common examples:
+        <ul>
+            <li><code>--force_high_performance_gpu</code> — prefer the discrete GPU on hybrid systems</li>
+            <li><code>--ozone-platform-hint=auto</code> — let Electron pick Wayland vs X11 (override auto-detect)</li>
+            <li><code>--enable-features=VaapiVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxGL</code> — VA-API hardware video decode (Linux)</li>
+            <li><code>--disable-gpu</code> — disable hardware acceleration</li>
+        </ul>
+    </div>
+
     <div id="buttons">
+        <button id="reset">Reset</button>
         <button id="cancel">Cancel</button>
         <button id="save">Save</button>
     </div>
@@ -104,6 +137,9 @@
 
     argsInput.value = data.get("CURRENT_ARGS") || "";
 
+    document.getElementById("reset").onclick = () => {
+        argsInput.value = "";
+    };
     document.getElementById("cancel").onclick = () => console.info("close");
     document.getElementById("save").onclick = () => console.info("save:" + argsInput.value);
 </script>

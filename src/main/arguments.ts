@@ -28,9 +28,10 @@ export function createArgumentsWindow() {
             : process.platform === "linux"
               ? { icon: join(STATIC_DIR, "icon.png") }
               : {}),
-        height: 300,
-        width: 500,
-        resizable: false
+        height: 480,
+        width: 540,
+        minHeight: 320,
+        minWidth: 420
     });
 
     makeLinksOpenExternally(argumentsWindow);

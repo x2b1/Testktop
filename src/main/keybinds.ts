@@ -5,7 +5,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { constants, existsSync, open, unlinkSync } from "node:fs";
+import { constants, existsSync, lstatSync, open, statSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 
 import { Socket } from "net";
@@ -13,33 +13,48 @@ import { IpcEvents } from "shared/IpcEvents";
 
 import { mainWin } from "./mainWindow";
 
-const xdgRuntimeDir = process.env.XDG_RUNTIME_DIR || process.env.TMP || "/tmp";
-const socketFile = join(xdgRuntimeDir, "vesktop-ipc");
+const xdgRuntimeDir = process.env.XDG_RUNTIME_DIR;
+const socketFile = xdgRuntimeDir ? join(xdgRuntimeDir, "vesktop-ipc") : null;
 
 const Actions = new Set([IpcEvents.TOGGLE_SELF_DEAF, IpcEvents.TOGGLE_SELF_MUTE]);
 
-function createFIFO() {
-    if (existsSync(socketFile)) {
+function createFIFO(path: string) {
+    if (existsSync(path)) {
         try {
-            unlinkSync(socketFile);
+            const st = lstatSync(path);
+            const myUid = typeof process.getuid === "function" ? process.getuid() : -1;
+            if (st.uid !== myUid) {
+                console.error("Keybind FIFO exists but is owned by another user, refusing to remove:", path);
+                return false;
+            }
+            unlinkSync(path);
         } catch (err) {
             console.error("Failed to remove existing mkfifo file:", err);
             return false;
         }
     }
 
-    try {
-        spawnSync("mkfifo", [socketFile]);
-    } catch (err) {
-        console.error("Failed to create mkfifo while initializing keybinds:", err);
+    const result = spawnSync("mkfifo", ["-m", "0600", path]);
+    if (result.status !== 0) {
+        console.error(
+            "Failed to create mkfifo while initializing keybinds:",
+            result.stderr?.toString() || result.error
+        );
         return false;
     }
     return true;
 }
 
-function openFIFO() {
+function openFIFO(path: string) {
     try {
-        open(socketFile, constants.O_RDONLY | constants.O_NONBLOCK, (err, fd) => {
+        const st = statSync(path);
+        const myUid = typeof process.getuid === "function" ? process.getuid() : -1;
+        if (st.uid !== myUid) {
+            console.error("Keybind FIFO ownership changed, refusing to open:", path);
+            return;
+        }
+
+        open(path, constants.O_RDONLY | constants.O_NONBLOCK, (err, fd) => {
             if (err) {
                 console.error("Error opening pipe while initializing keybinds:", err);
                 return;
@@ -55,7 +70,7 @@ function openFIFO() {
 
             pipe.on("end", () => {
                 pipe.destroy();
-                openFIFO();
+                openFIFO(path);
             });
         });
     } catch (err) {
@@ -64,6 +79,7 @@ function openFIFO() {
 }
 
 function cleanup() {
+    if (!socketFile) return;
     try {
         unlinkSync(socketFile);
     } catch (err) {}
@@ -72,7 +88,11 @@ function cleanup() {
 process.on("exit", cleanup);
 
 export function initKeybinds() {
-    if (createFIFO()) {
-        openFIFO();
+    if (!socketFile) {
+        console.warn("Keybinds disabled: XDG_RUNTIME_DIR is not set");
+        return;
+    }
+    if (createFIFO(socketFile)) {
+        openFIFO(socketFile);
     }
 }

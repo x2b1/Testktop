@@ -292,7 +292,32 @@ Napi::Value SetStatusNotifierIcon(const Napi::CallbackInfo &info)
     }
 
     Napi::Buffer<uint8_t> buffer = info[0].As<Napi::Buffer<uint8_t>>();
-    std::vector<uint8_t> pixmap_data(buffer.Data(), buffer.Data() + buffer.Length());
+    size_t length = buffer.Length();
+
+    if (length < 8)
+    {
+        Napi::TypeError::New(env, "Pixmap buffer too small (need at least 8 bytes for header)").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    int32_t width, height;
+    std::memcpy(&width, buffer.Data(), 4);
+    std::memcpy(&height, buffer.Data() + 4, 4);
+
+    if (width <= 0 || height <= 0 || width > 4096 || height > 4096)
+    {
+        Napi::TypeError::New(env, "Pixmap dimensions out of range (1..4096)").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    size_t expected = 8 + static_cast<size_t>(width) * static_cast<size_t>(height) * 4;
+    if (length != expected)
+    {
+        Napi::TypeError::New(env, "Pixmap buffer size does not match width*height*4 + 8").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    std::vector<uint8_t> pixmap_data(buffer.Data(), buffer.Data() + length);
 
     bool success = g_sni_instance->set_icon_pixmap(pixmap_data);
 
@@ -391,15 +416,22 @@ Napi::Value DestroyStatusNotifierItem(const Napi::CallbackInfo &info)
 {
     if (g_sni_instance)
     {
-        g_sni_instance.reset();
+        g_sni_instance->set_menu_click_callback(nullptr);
+        g_sni_instance->set_activate_callback(nullptr);
     }
     if (g_menu_click_callback)
     {
         g_menu_click_callback.Release();
+        g_menu_click_callback = Napi::ThreadSafeFunction();
     }
     if (g_activate_callback)
     {
         g_activate_callback.Release();
+        g_activate_callback = Napi::ThreadSafeFunction();
+    }
+    if (g_sni_instance)
+    {
+        g_sni_instance.reset();
     }
     return info.Env().Undefined();
 }

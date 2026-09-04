@@ -21,37 +21,39 @@ You can join our [discord server](https://testcord.org/discord) for commits, cha
 - Custom Arguments from [this PR](https://github.com/Equicord/Equicord/pull/46)
 - arRPC-bun with debug logging support https://github.com/Creationsss/arrpc-bun
 
-**Linux Note**:
-
-- You can use the `--toggle-mic` & `--toggle-deafen` flags to toggle your microphone and deafen status from the terminal. These can be bound to keyboard shortcuts at the system level.
-
 **Not fully Supported**:
 - Global Keybinds (Windows/macOS - use command-line flags on Linux instead)
 
-# Equibop Arguments
+## Tesktop Arguments
+> [!NOTE]
+> For the full list of supported flags and how to apply them, see the Tips & Tricks page!
 
-### Runtime Flags
-These flags can be passed when launching the application  
-(or via `Right-click on the testktop tray icon > Launch arguments`):
+### Quick reference
+
+| Flag                            | Description                             |
+|---------------------------------|-----------------------------------------|
+| `--wayland` / `--ozone-platform=wayland` | Force native Wayland (auto enables WaylandWindowDecorations + VaapiVideoDecodeLinuxGL) |
+| `--ozone-platform=x11`          | Force XWayland                          |
+| `--no-sandbox`                  | Disable Chromium sandbox (use with caution, needed for root) |
+| `--force_high_performance_gpu`  | Prefer discrete GPU                     |
+| `--start-minimized`             | Launch minimized to tray                |
+| `--toggle-mic`                  | Toggle mic (bind to shortcuts)          |
+| `--toggle-deafen`               | Toggle deafen (bind to shortcuts)       |
+| `--toggle-vad`                  | Toggle Voice Activity Detection (Voice Activity <-> Push To Talk) |
+
+### Persistent flags
+
+Add flags to `${XDG_CONFIG_HOME}/tesktop-flags.conf` — one per line, lines starting with `#` are comments.
 
 ```bash
 --wayland
 ```
-> Forces the application to use the **Ozone Wayland** platform.  
-> Automatically enables:  
-> â€˘ `WaylandWindowDecorations`  
-> â€˘ `VaapiVideoDecodeLinuxGL` (hardware acceleration)
-
-**Alternative (basic Wayland):**
-```bash
---enable-features=UseOzonePlatform --ozone-platform=wayland
-```
+> Forces the application to use the **Ozone Wayland** platform. Automatically enables `WaylandWindowDecorations` + `VaapiVideoDecodeLinuxGL`.
 
 ```bash
 --no-sandbox
 ```
-> Disables the Chromium sandbox.  
-> Commonly used when the application is executed as root.
+> Disables the Chromium sandbox. Commonly used when the application is executed as root.
 
 ```bash
 --force_high_performance_gpu
@@ -59,29 +61,18 @@ These flags can be passed when launching the application
 > Instructs the engine to prioritize the discrete (high-performance) GPU.
 
 ### Development and Build Arguments
-These arguments are parsed during the build process:
 
 ```bash
 --dev
 ```
-> Enables development mode.  
-> â€˘ Disables code minification  
-> â€˘ Sets `IS_DEV` to `true`
+> Enables development mode. Disables code minification, sets `IS_DEV` to `true`.
 
 ```bash
 --watch
 ```
-> Starts a persistent build context that monitors file changes  
-> and triggers automatic rebuilds.
+> Starts a persistent build context that monitors file changes and triggers automatic rebuilds.
 
-### Persistent Configuration File
-The launcher supports a flags file located at:
-
-```
-${XDG_CONFIG_HOME}/testktop-flags.conf
-```
-
-**Rules:**
+**Rules for `tesktop-flags.conf`:**
 - Empty lines are ignored
 - Lines starting with `#` are treated as comments
 - Valid entries are appended to the execution command

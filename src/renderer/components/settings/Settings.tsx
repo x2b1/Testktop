@@ -21,6 +21,7 @@ import { OutdatedVesktopWarning } from "./OutdatedVesktopWarning";
 import { Updater } from "./Updater";
 import { UserAssetsButton } from "./UserAssets";
 import { VesktopSettingsSwitch } from "./VesktopSettingsSwitch";
+import { WebRTCIPHandlingPolicyPicker } from "./WebRTCIPHandlingPolicyPicker";
 import { WindowsTransparencyControls } from "./WindowsTransparencyControls";
 
 interface BooleanSetting {
@@ -154,7 +155,8 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
             title: "Open Links in app (experimental)",
             description: "Opens links in a new Equibop window instead of your web browser",
             defaultValue: false
-        }
+        },
+        WebRTCIPHandlingPolicyPicker
     ],
     "Developer Options": [DeveloperOptionsButton]
 };

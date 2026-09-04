@@ -9,5 +9,11 @@ import { contextBridge, ipcRenderer } from "electron/renderer";
 contextBridge.exposeInMainWorld("VesktopSplashNative", {
     onUpdateMessage(callback: (message: string) => void) {
         ipcRenderer.on("update-splash-message", (_, message: string) => callback(message));
+    },
+    onUpdateProgress(callback: (percentage: number) => void) {
+        ipcRenderer.on("update-splash-progress", (_, percentage: number) => callback(percentage));
+    },
+    onSetProgressVisible(callback: (visible: boolean) => void) {
+        ipcRenderer.on("set-splash-progress-visible", (_, visible: boolean) => callback(visible));
     }
 });

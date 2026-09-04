@@ -107,8 +107,19 @@
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const messageElement = document.querySelector('.message');
+        const progressBar = document.getElementById("progress");
+        const progressPercentage = document.getElementById("progress-percentage");
+        const progressSection = document.getElementById("progress-section");
+
         VesktopSplashNative.onUpdateMessage(message => {
             messageElement.textContent = message;
-        })
+        });
+        VesktopSplashNative.onUpdateProgress(percentage => {
+            progressBar.style.width = percentage + "%";
+            progressPercentage.textContent = percentage + "%";
+        });
+        VesktopSplashNative.onSetProgressVisible(visible => {
+            progressSection.style.display = visible ? "" : "none";
+        });
     });
 </script>

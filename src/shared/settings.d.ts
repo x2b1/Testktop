@@ -9,6 +9,11 @@ import type { Rectangle } from "electron";
 export interface Settings {
     discordBranch?: "stable" | "canary" | "ptb";
     transparencyOption?: "none" | "mica" | "tabbed" | "acrylic";
+    webRTCIPHandlingPolicy?:
+        | "default"
+        | "default_public_interface_only"
+        | "default_public_and_private_interfaces"
+        | "disable_non_proxied_udp";
     tray?: boolean;
     minimizeToTray?: boolean;
     autoStartMinimized?: boolean;
@@ -23,12 +28,7 @@ export interface Settings {
     arRPCDisabled?: boolean;
     arRPCDebug?: boolean;
     arRPCProcessScanning?: boolean;
-    arRPCBridge?: boolean;
-    arRPCBridgePort?: number;
-    arRPCBridgeHost?: string;
-    arRPCWebSocketHost?: string;
     arRPCWebSocketAutoReconnect?: boolean;
-    arRPCWebSocketReconnectInterval?: number;
     arRPCWebSocketCustomHost?: string;
     arRPCWebSocketCustomPort?: number;
     appBadge?: boolean;
@@ -57,6 +57,7 @@ export interface Settings {
         ignoreDevices?: boolean;
         ignoreInputMedia?: boolean;
 
+        mute?: boolean;
         onlySpeakers?: boolean;
         onlyDefaultSpeakers?: boolean;
     };

@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import { existsSync, mkdirSync } from "fs";
-import { join } from "path";
+import { join, parse } from "path";
 
 const OUTPUT_DIR = join(import.meta.dir, "..", "..", "static/dist");
 const ARRPC_DIR = join(import.meta.dir, "..", "..", "node_modules/arrpc-bun");
@@ -17,7 +17,7 @@ const TARGETS: CompileTarget[] = [
 	{
 		platform: "linux",
 		arch: "x64",
-		target: "bun-linux-x64",
+		target: "bun-linux-x64-baseline",
 		output: "arrpc-linux-x64"
 	},
 	{
@@ -29,6 +29,7 @@ const TARGETS: CompileTarget[] = [
 	{
 		platform: "darwin",
 		arch: "x64",
+
 		target: "bun-darwin-x64",
 		output: "arrpc-darwin-x64"
 	},
@@ -41,7 +42,7 @@ const TARGETS: CompileTarget[] = [
 	{
 		platform: "windows",
 		arch: "x64",
-		target: "bun-windows-x64",
+		target: "bun-windows-x64-baseline",
 		output: "arrpc-windows-x64.exe"
 	}
 ];
@@ -90,9 +91,19 @@ for (const target of targetsToCompile) {
 
 	try {
 		const cmd = `bun build ${ARRPC_ENTRY} --compile --target=${target.target} --outfile=${outputPath}`;
+		const env = { ...process.env };
+		// see https://github.com/oven-sh/bun/issues/28327.
+		if (currentPlatform === "windows") {
+			env.BUN_INSTALL = join(parse(ARRPC_DIR).root, ".bun-compile");
+		}
+		// see https://github.com/oven-sh/bun/issues/29120.
+		if (target.platform === "darwin") {
+			env.BUN_NO_CODESIGN_MACHO_BINARY = "1";
+		}
 		execSync(cmd, {
 			stdio: "inherit",
-			cwd: ARRPC_DIR
+			cwd: ARRPC_DIR,
+			env
 		});
 
 		console.log(`Compiled ${target.output}\n`);

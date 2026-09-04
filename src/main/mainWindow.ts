@@ -195,8 +195,11 @@ function initWindowBoundsListeners(win: BrowserWindow) {
     win.on("maximize", saveState);
     win.on("minimize", saveState);
     win.on("unmaximize", saveState);
+    win.on("restore", saveState);
 
     const saveBounds = () => {
+        if (win.isMaximized()) return;
+
         State.store.windowBounds = win.getBounds();
     };
 
@@ -358,7 +361,7 @@ function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
         ...getWindowBoundsOptions()
     };
 
-    if (transparent) {
+    if (transparent && process.platform !== "darwin") {
         options.transparent = true;
         options.backgroundColor = "#00000000";
     }
@@ -380,8 +383,10 @@ function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
         options.titleBarStyle = "hidden";
         options.trafficLightPosition = { x: 10, y: 10 };
 
-        if (macosVibrancyStyle) {
-            options.vibrancy = macosVibrancyStyle;
+        if (transparent) {
+            options.titleBarStyle = "hiddenInset";
+            options.vibrancy = macosVibrancyStyle || "sidebar";
+            options.visualEffectState = "active";
             options.backgroundColor = "#00000000";
         }
     }
@@ -437,6 +442,7 @@ function createMainWindow() {
 
     win.webContents.setUserAgent(BrowserUserAgent);
     addSplashLog();
+    win.webContents.setWebRTCIPHandlingPolicy("default_public_and_private_interfaces");
 
     // if the open-url event is fired (in index.ts) while starting up, darwinURL will be set. If not fall back to checking the process args (which Windows and Linux use for URI calling.)
     // win.webContents.session.clearCache().then(() => {
@@ -495,9 +501,7 @@ export async function createWindows() {
         }
 
         if (isDeckGameMode) {
-            // always use entire display
             mainWin?.setFullScreen(true);
-
             askToApplySteamLayout(mainWin);
         }
 
@@ -518,6 +522,7 @@ export async function createWindows() {
         }
     });
 
+    mainWin.webContents.on("render-process-gone", (event, details) => console.log(details));
     setupArRPC();
     initArRPC();
     if (isLinux) initKeybinds();

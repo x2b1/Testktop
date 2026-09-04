@@ -43,6 +43,10 @@ function init() {
         enableHardwareAcceleration = false;
         app.disableHardwareAcceleration();
     } else {
+        if (isLinux) {
+            disabledFeatures.add("WaylandWpColorManagerV1");
+        }
+
         if (hardwareVideoAcceleration) {
             enabledFeatures.add("AcceleratedVideoEncoder");
             enabledFeatures.add("AcceleratedVideoDecoder");
@@ -74,7 +78,13 @@ function init() {
                 if (eqIndex !== -1) {
                     const key = cleanArg.slice(2, eqIndex);
                     const value = cleanArg.slice(eqIndex + 1);
-                    app.commandLine.appendSwitch(key, value);
+                    if (key === "enable-features") {
+                        value.split(",").forEach(feature => enabledFeatures.add(feature));
+                    } else if (key === "disable-features") {
+                        value.split(",").forEach(feature => disabledFeatures.add(feature));
+                    } else {
+                        app.commandLine.appendSwitch(key, value);
+                    }
                 } else {
                     app.commandLine.appendSwitch(cleanArg.slice(2));
                 }
@@ -142,4 +152,13 @@ app.on("open-url", (_, url) => {
 
 app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
+});
+
+app.on("web-contents-created", (_event, contents) => {
+    contents.setWebRTCIPHandlingPolicy(Settings.store.webRTCIPHandlingPolicy ?? "default");
+});
+Settings.addChangeListener("webRTCIPHandlingPolicy", () => {
+    for (const win of BrowserWindow.getAllWindows()) {
+        win.webContents.setWebRTCIPHandlingPolicy(Settings.store.webRTCIPHandlingPolicy ?? "default");
+    }
 });

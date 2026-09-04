@@ -274,6 +274,7 @@
             </span>
         </div>
         <div class="activities hidden" id="activities-list"></div>
+        <div id="status-error" class="hidden" style="margin-top: 0.6em; padding: 0.6em; border-radius: 4px; background: #ed424522; border: 1px solid #ed4245; font-size: 0.85rem;"></div>
     </div>
 
     <div class="settings-section">
@@ -329,8 +330,9 @@
         </p>
         <div class="input-row">
             <input type="text" id="custom-host" placeholder="Host (e.g. 127.0.0.1)" />
-            <input type="number" id="custom-port" placeholder="Port" />
+            <input type="number" id="custom-port" placeholder="Port (default: 1337)" />
         </div>
+        <div id="custom-host-error" class="hidden" style="color: #ed4245; font-size: 0.85rem; margin-top: 0.4em;"></div>
     </div>
 
     <div id="buttons">
@@ -417,12 +419,40 @@
         console.info("set:arRPCDebug=" + settings.arRPCDebug);
     };
 
+    const customHostError = document.getElementById("custom-host-error");
+
+    function isLocalHost(host) {
+        if (!host) return true;
+        const v = host.toLowerCase().trim();
+        if (v === "localhost" || v === "::1" || v === "0.0.0.0") return true;
+        if (/^127(\.\d{1,3}){3}$/.test(v)) return true;
+        if (v.startsWith("[::1]")) return true;
+        return false;
+    }
+
     customHost.onchange = () => {
+        if (!isLocalHost(customHost.value)) {
+            customHostError.textContent = "Only local hosts allowed (127.x.x.x, ::1, localhost).";
+            customHostError.classList.remove("hidden");
+            customHost.value = settings.arRPCWebSocketCustomHost;
+            return;
+        }
+        customHostError.classList.add("hidden");
+        settings.arRPCWebSocketCustomHost = customHost.value;
         console.info("set:arRPCWebSocketCustomHost=" + customHost.value);
     };
 
     customPort.onchange = () => {
-        console.info("set:arRPCWebSocketCustomPort=" + customPort.value);
+        const v = customPort.value.trim();
+        if (v && (!/^\d+$/.test(v) || +v < 1 || +v > 65535)) {
+            customHostError.textContent = "Port must be an integer between 1 and 65535.";
+            customHostError.classList.remove("hidden");
+            customPort.value = settings.arRPCWebSocketCustomPort;
+            return;
+        }
+        customHostError.classList.add("hidden");
+        settings.arRPCWebSocketCustomPort = v;
+        console.info("set:arRPCWebSocketCustomPort=" + v);
     };
 
     document.getElementById("restart").onclick = () => console.info("restart");
@@ -479,12 +509,28 @@
         }
 
         versionInfo.textContent = status.appVersion ? `\u2022 v${status.appVersion}` : "";
+
+        const errorBox = document.getElementById("status-error");
+        if (status.lastError && !status.isReady) {
+            let hint = "";
+            if (/binary not found/i.test(status.lastError)) {
+                hint = " \u2014 install arrpc-bun via your package manager (AUR, brew, nix, etc.) or reinstall Equibop.";
+            } else if (/SIGILL/.test(status.lastError)) {
+                hint = " \u2014 the bundled arRPC binary is built for a different CPU architecture.";
+            } else if (/timeout/i.test(status.lastError)) {
+                hint = " \u2014 try restarting arRPC.";
+            }
+            errorBox.textContent = status.lastError + hint;
+            errorBox.classList.remove("hidden");
+        } else {
+            errorBox.classList.add("hidden");
+        }
     }
 
     renderStatus();
 
-    window.updateStatus = function (newStatus) {
+    VesktopArRPCNative.onStatusUpdate(function (newStatus) {
         status = newStatus;
         renderStatus();
-    };
+    });
 </script>

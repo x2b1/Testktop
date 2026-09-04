@@ -245,6 +245,8 @@ GVariant *StatusNotifierItem::handle_get_property(
         return g_variant_new_object_path(self->menu_object_path.c_str());
     }
 
+    g_set_error(error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_PROPERTY,
+                "Unknown SNI property: %s", property_name);
     return nullptr;
 }
 
@@ -498,7 +500,6 @@ GVariant *StatusNotifierItem::handle_menu_get_property(
     (void)sender;
     (void)object_path;
     (void)interface_name;
-    (void)error;
     (void)user_data;
 
     if (g_strcmp0(property_name, "Version") == 0)
@@ -520,6 +521,8 @@ GVariant *StatusNotifierItem::handle_menu_get_property(
         return g_variant_builder_end(&builder);
     }
 
+    g_set_error(error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_PROPERTY,
+                "Unknown DBusMenu property: %s", property_name);
     return nullptr;
 }
 
@@ -607,8 +610,8 @@ bool StatusNotifierItem::initialize()
         service_name.c_str(),
         flags,
         nullptr,
-        nullptr,
-        nullptr,
+        on_name_lost,
+        this,
         nullptr);
 
     if (owner_id == 0)
@@ -640,7 +643,7 @@ bool StatusNotifierItem::register_with_watcher()
         g_variant_new("(s)", register_name),
         nullptr,
         G_DBUS_CALL_FLAGS_NONE,
-        -1,
+        2000,
         nullptr,
         &error));
 
@@ -903,6 +906,21 @@ void StatusNotifierItem::on_watcher_name_changed(
     {
         self->registered_with_watcher = false;
     }
+}
+
+void StatusNotifierItem::on_name_lost(
+    GDBusConnection *connection,
+    const gchar *name,
+    gpointer user_data)
+{
+    (void)connection;
+
+    auto *self = static_cast<StatusNotifierItem *>(user_data);
+    self->name_owned = false;
+    self->registered_with_watcher = false;
+    std::cerr << "[libvesktop] Lost ownership of bus name '" << (name ? name : "")
+              << "' (likely another Equibop instance took over). Tray events will stop reaching this process."
+              << std::endl;
 }
 
 void StatusNotifierItem::subscribe_to_watcher()

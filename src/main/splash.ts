@@ -19,6 +19,18 @@ import { loadView } from "./vesktopStatic";
 const totalTasks = 9;
 let doneTasks = 0;
 
+let splashReady = false;
+const pendingSplashMessages: Array<[string, unknown]> = [];
+
+function sendToSplash(channel: string, payload: unknown) {
+    if (!splash || splash.isDestroyed()) return;
+    if (splashReady) {
+        splash.webContents.send(channel, payload);
+    } else {
+        pendingSplashMessages.push([channel, payload]);
+    }
+}
+
 export async function createSplashWindow(startMinimized = false) {
     splash = new BrowserWindow({
         ...SplashProps,
@@ -79,40 +91,39 @@ export async function createSplashWindow(startMinimized = false) {
         `);
     }
 
-    if (splashProgress) {
-        splash.webContents.executeJavaScript(`
-            document.getElementById("progress-percentage").innerHTML = "${doneTasks}%";
-        `);
-    } else {
-        splash.webContents.executeJavaScript(`
-            document.getElementById("progress-section").style.display = "none";
-        `);
+    if (!splashProgress) {
+        sendToSplash("set-splash-progress-visible", false);
     }
+
+    splash.webContents.once("did-finish-load", () => {
+        if (!splash || splash.isDestroyed()) return;
+        splashReady = true;
+        for (const [channel, payload] of pendingSplashMessages) {
+            if (!splash || splash.isDestroyed()) return;
+            splash.webContents.send(channel, payload);
+        }
+        pendingSplashMessages.length = 0;
+    });
+
+    splash.on("closed", () => {
+        splashReady = false;
+        pendingSplashMessages.length = 0;
+    });
 
     return splash;
 }
 
-/**
- * Adds a new log count to the splash
- */
 export function addSplashLog() {
-    if (splash && !splash.isDestroyed()) {
-        doneTasks++;
-        const percentage = Math.min(100, Math.round((doneTasks / totalTasks) * 100));
-        splash.webContents.executeJavaScript(`
-            document.getElementById("progress").style.width = "${percentage}%";
-            document.getElementById("progress-percentage").innerHTML = "${percentage}%";
-        `);
-    }
+    if (!splash || splash.isDestroyed()) return;
+    doneTasks++;
+    const percentage = Math.min(100, Math.round((doneTasks / totalTasks) * 100));
+    sendToSplash("update-splash-progress", percentage);
 }
 
-/**
- * Returns the splash window
- */
 export function getSplash() {
     return splash;
 }
 
 export function updateSplashMessage(message: string) {
-    if (splash && !splash.isDestroyed()) splash.webContents.send("update-splash-message", message);
+    sendToSplash("update-splash-message", message);
 }

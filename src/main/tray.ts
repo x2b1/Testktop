@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { app, BrowserWindow, Menu, NativeImage, nativeImage, Tray } from "electron";
+import { app, type BrowserWindow, dialog, Menu, type NativeImage, nativeImage, Tray } from "electron";
 import { join } from "path";
 import { STATIC_DIR } from "shared/paths";
 
 import { createAboutWindow } from "./about";
 import { createArgumentsWindow } from "./arguments";
-import { restartArRPC } from "./arrpc";
+import { createArRPCWindow } from "./arrpcWindow";
 import { AppEvents } from "./events";
 import { Settings } from "./settings";
-import { resolveAssetPath, UserAssetType } from "./userAssets";
+import { resolveAssetPath } from "./userAssets";
 import { clearData } from "./utils/clearData";
 import { downloadVencordAsar } from "./utils/vencordLoader";
 
@@ -33,37 +33,34 @@ if (isLinux) {
 let tray: Tray | null = null;
 let trayVariant: TrayVariant = "tray";
 let onTrayClick: (() => void) | null = null;
-let trayUpdateTimeout: NodeJS.Timeout | null = null;
-let pendingTrayVariant: TrayVariant | null = null;
 let nativeTrayWindow: BrowserWindow | null = null;
 let nativeTrayUpdateCallback: (() => void) | null = null;
 
 const trayImageCache = new Map<string, NativeImage>();
+const trayPixmapCache = new Map<string, Buffer>();
 
 let useNativeTray = false;
 let nativeTrayInitialized = false;
 
 async function getCachedTrayImage(variant: TrayVariant): Promise<NativeImage> {
-    const path = await resolveAssetPath(variant as UserAssetType);
+    const path = await resolveAssetPath(variant);
 
     const cached = trayImageCache.get(path);
     if (cached) return cached;
 
     const image = nativeImage.createFromPath(path);
-    trayImageCache.set(path, image);
+    const resized = image.resize({ width: 32, height: 32 });
+    trayImageCache.set(path, resized);
 
-    return image;
+    return resized;
 }
 
 function nativeImageToPixmap(image: NativeImage): Promise<Buffer> {
     return new Promise(resolve => {
         setImmediate(() => {
-            const resized = image.resize({ width: 32, height: 32 });
-            const size = resized.getSize();
-            const { width } = size;
-            const { height } = size;
+            const { width, height } = image.getSize();
 
-            const bitmap = resized.toBitmap();
+            const bitmap = image.toBitmap();
 
             const pixmapSize = 8 + bitmap.length;
             const pixmap = Buffer.allocUnsafe(pixmapSize);
@@ -72,25 +69,33 @@ function nativeImageToPixmap(image: NativeImage): Promise<Buffer> {
             pixmap.writeUInt32LE(height, 4);
 
             for (let i = 0; i < bitmap.length; i += 4) {
-                const r = bitmap[i];
+                const b = bitmap[i];
                 const g = bitmap[i + 1];
-                const b = bitmap[i + 2];
+                const r = bitmap[i + 2];
                 const a = bitmap[i + 3];
 
-                const alpha = a / 255;
-                const premultR = Math.round(r * alpha);
-                const premultG = Math.round(g * alpha);
-                const premultB = Math.round(b * alpha);
-
-                pixmap[8 + i] = a;
-                pixmap[8 + i + 1] = premultB;
-                pixmap[8 + i + 2] = premultG;
-                pixmap[8 + i + 3] = premultR;
+                const o = 8 + i;
+                pixmap[o] = a;
+                pixmap[o + 1] = ((r * a + 127) * 257) >>> 16;
+                pixmap[o + 2] = ((g * a + 127) * 257) >>> 16;
+                pixmap[o + 3] = ((b * a + 127) * 257) >>> 16;
             }
 
             resolve(pixmap);
         });
     });
+}
+
+async function getCachedTrayPixmap(variant: TrayVariant): Promise<Buffer> {
+    const path = await resolveAssetPath(variant);
+    const cached = trayPixmapCache.get(path);
+    if (cached) return cached;
+
+    const image = await getCachedTrayImage(variant);
+    const pixmap = await nativeImageToPixmap(image);
+    trayPixmapCache.set(path, pixmap);
+
+    return pixmap;
 }
 
 const userAssetChangedListener = async (asset: string) => {
@@ -99,11 +104,12 @@ const userAssetChangedListener = async (asset: string) => {
     try {
         if (useNativeTray && nativeSNI) {
             trayImageCache.clear();
-            const image = await getCachedTrayImage(trayVariant);
-            const pixmap = await nativeImageToPixmap(image);
+            trayPixmapCache.clear();
+            const pixmap = await getCachedTrayPixmap(trayVariant);
             nativeSNI.setStatusNotifierIcon(pixmap);
         } else if (tray) {
             trayImageCache.clear();
+            trayPixmapCache.clear();
             const image = await getCachedTrayImage(trayVariant);
             tray.setImage(image);
         }
@@ -119,8 +125,7 @@ async function updateTrayIconNative(variant: TrayVariant) {
 
     try {
         if (useNativeTray && nativeSNI) {
-            const image = await getCachedTrayImage(variant);
-            const pixmap = await nativeImageToPixmap(image);
+            const pixmap = await getCachedTrayPixmap(variant);
             nativeSNI.setStatusNotifierIcon(pixmap);
         }
     } catch (e) {
@@ -144,20 +149,7 @@ const setTrayVariantListener = (variant: TrayVariant) => {
     if (useNativeTray) {
         updateTrayIconNative(variant);
     } else {
-        pendingTrayVariant = variant;
-
-        if (trayUpdateTimeout) return;
-
         updateTrayIconElectron(variant);
-
-        trayUpdateTimeout = setTimeout(() => {
-            trayUpdateTimeout = null;
-
-            if (pendingTrayVariant && pendingTrayVariant !== trayVariant) {
-                updateTrayIconElectron(pendingTrayVariant);
-            }
-            pendingTrayVariant = null;
-        }, 100);
     }
 };
 
@@ -172,12 +164,6 @@ if (!AppEvents.listeners("setTrayVariant").includes(setTrayVariantListener)) {
 export function destroyTray() {
     AppEvents.off("userAssetChanged", userAssetChangedListener);
     AppEvents.off("setTrayVariant", setTrayVariantListener);
-
-    if (trayUpdateTimeout) {
-        clearTimeout(trayUpdateTimeout);
-        trayUpdateTimeout = null;
-    }
-    pendingTrayVariant = null;
 
     if (useNativeTray && nativeSNI) {
         try {
@@ -208,6 +194,7 @@ export function destroyTray() {
     }
 
     trayImageCache.clear();
+    trayPixmapCache.clear();
     useNativeTray = false;
 }
 
@@ -227,23 +214,19 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                 useNativeTray = true;
                 nativeTrayInitialized = true;
 
-                const initialImage = await getCachedTrayImage(trayVariant);
-                const pixmap = await nativeImageToPixmap(initialImage);
+                const pixmap = await getCachedTrayPixmap(trayVariant);
                 nativeSNI.setStatusNotifierIcon(pixmap);
-                nativeSNI.setStatusNotifierTitle("Equibop");
+                nativeSNI.setStatusNotifierTitle("Tesktop");
 
                 const menuItems = [
                     { id: 1, label: win.isVisible() ? "Hide" : "Open", enabled: true, visible: true },
                     { id: 2, label: "About", enabled: true, visible: true },
-                    { id: 3, label: "Repair Equicord", enabled: true, visible: true },
-                    { id: 4, label: "Reset Equibop", enabled: true, visible: true },
+                    { id: 11, type: "separator" as const, enabled: true, visible: true },
                     { id: 5, label: "Launch Arguments", enabled: true, visible: true },
-                    {
-                        id: 6,
-                        label: "Restart arRPC",
-                        enabled: true,
-                        visible: Settings.store.arRPC === true
-                    },
+                    { id: 10, label: "Configure Rich Presence", enabled: true, visible: true },
+                    { id: 12, type: "separator" as const, enabled: true, visible: true },
+                    { id: 3, label: "Repair Tesktop", enabled: true, visible: true },
+                    { id: 4, label: "Reset Tesktop", enabled: true, visible: true },
                     { id: 7, type: "separator" as const, enabled: true, visible: true },
                     { id: 8, label: "Restart", enabled: true, visible: true },
                     { id: 9, label: "Quit", enabled: true, visible: true }
@@ -272,14 +255,22 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                         case 2: // about
                             createAboutWindow();
                             break;
-                        case 3: // repair testktop
-                            downloadVencordAsar().then(() => {
-                                setTimeout(() => {
-                                    destroyTray();
-                                    app.relaunch();
-                                    app.quit();
-                                }, 0);
-                            });
+                        case 3: // repair Tesktop
+                            downloadVencordAsar()
+                                .then(() => {
+                                    setTimeout(() => {
+                                        destroyTray();
+                                        app.relaunch();
+                                        app.quit();
+                                    }, 0);
+                                })
+                                .catch(err => {
+                                    console.error("[Tray] Repair Tesktop failed:", err);
+                                    dialog.showErrorBox(
+                                        "Repair Tesktop failed",
+                                        `Could not download Testcord:\n\n${err instanceof Error ? err.message : String(err)}`
+                                    );
+                                });
                             break;
                         case 4: // reset Equibop
                             clearData(win);
@@ -287,8 +278,8 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                         case 5: // launch arguments
                             createArgumentsWindow();
                             break;
-                        case 6: // restart arRPC-bun
-                            restartArRPC();
+                        case 10: // configure rich presence
+                            createArRPCWindow();
                             break;
                         case 8: // restart
                             setTimeout(() => {
@@ -334,35 +325,41 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
             label: "About",
             click: createAboutWindow
         },
+        { type: "separator" },
         {
-            label: "Repair Equicord",
+            label: "Launch Arguments",
+            click: createArgumentsWindow
+        },
+        {
+            label: "Configure Rich Presence",
+            click: createArRPCWindow
+        },
+        { type: "separator" },
+        {
+            label: "Repair Tesktop",
             async click() {
-                await downloadVencordAsar();
+                try {
+                    await downloadVencordAsar();
+                } catch (err) {
+                    console.error("[Tray] Repair Tesktop failed:", err);
+                    dialog.showErrorBox(
+                        "Repair Tesktop failed",
+                        `Could not download Testcord:\n\n${err instanceof Error ? err.message : String(err)}`
+                    );
+                    return;
+                }
                 destroyTray();
                 app.relaunch();
                 app.quit();
             }
         },
         {
-            label: "Reset Equibop",
+            label: "Reset Tesktop",
             async click() {
                 await clearData(win);
             }
         },
-        {
-            label: "Launch Arguments",
-            click: createArgumentsWindow
-        },
-        {
-            label: "Restart arRPC",
-            visible: Settings.store.arRPC === true,
-            async click() {
-                await restartArRPC();
-            }
-        },
-        {
-            type: "separator"
-        },
+        { type: "separator" },
         {
             label: "Restart",
             click() {
@@ -383,7 +380,7 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
     try {
         const initialImage = await getCachedTrayImage(trayVariant);
         tray = new Tray(initialImage);
-        tray.setToolTip("Equibop");
+        tray.setToolTip("Tesktop");
 
         if (isLinux) {
             tray.on("click", onTrayClick);

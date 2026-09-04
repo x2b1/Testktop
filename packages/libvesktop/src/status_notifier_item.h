@@ -39,6 +39,7 @@ private:
     guint owner_id = 0;
     guint watcher_id = 0;
     bool registered_with_watcher = false;
+    bool name_owned = true;
     std::string service_name;
     std::string object_path;
     std::string menu_object_path = "/MenuBar";
@@ -104,6 +105,11 @@ private:
         const gchar *interface_name,
         const gchar *signal_name,
         GVariant *parameters,
+        gpointer user_data);
+
+    static void on_name_lost(
+        GDBusConnection *connection,
+        const gchar *name,
         gpointer user_data);
 
     bool register_with_watcher();

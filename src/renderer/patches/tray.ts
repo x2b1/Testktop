@@ -13,9 +13,15 @@ import { setBadge } from "../appBadge";
 type TrayVariant = "tray" | "trayUnread" | "traySpeaking" | "trayIdle" | "trayMuted" | "trayDeafened";
 
 let isInCall = false;
-let currentVariant: TrayVariant | null = null;
+let callStartTime: number | null = null;
 
-const subscriptions: Array<{ event: string; callback: (data: any) => void }> = [];
+export function getCallStartTime(): number | null {
+    return callStartTime;
+}
+
+let currentVariant: TrayVariant | null = null;
+let lastSentVariant: TrayVariant | null = null;
+let trayStateUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function getTrayVariantForVoiceState(): TrayVariant | null {
     if (!isInCall) return null;
@@ -28,61 +34,79 @@ function getTrayVariantForVoiceState(): TrayVariant | null {
 function updateTrayIcon() {
     const newVariant = getTrayVariantForVoiceState();
 
-    if (newVariant !== currentVariant) {
-        currentVariant = newVariant;
+    if (newVariant === currentVariant) return;
+    currentVariant = newVariant;
 
-        if (newVariant) {
-            VesktopNative.tray.setVoiceState(newVariant);
-        }
+    if (trayStateUpdateTimeout) return;
+
+    // debounce
+    trayStateUpdateTimeout = setTimeout(() => {
+        trayStateUpdateTimeout = null;
+
+        if (!currentVariant || currentVariant === lastSentVariant) return;
+        lastSentVariant = currentVariant;
+        VesktopNative.tray.setVoiceState(currentVariant);
+    }, 100);
+}
+
+function clearTrayStateDebounce() {
+    if (!trayStateUpdateTimeout) return;
+    clearTimeout(trayStateUpdateTimeout);
+    trayStateUpdateTimeout = null;
+}
+
+function resetTrayStateTracking() {
+    clearTrayStateDebounce();
+    currentVariant = null;
+    lastSentVariant = null;
+}
+
+function setTrayVariantImmediately(variant: TrayVariant) {
+    if (currentVariant === variant && lastSentVariant === variant) return;
+
+    currentVariant = variant;
+    clearTrayStateDebounce();
+
+    if (lastSentVariant !== variant) {
+        lastSentVariant = variant;
+        VesktopNative.tray.setVoiceState(variant);
     }
 }
 
-export function cleanupTraySubscriptions() {
-    subscriptions.forEach(({ event, callback }) => {
-        FluxDispatcher.unsubscribe(event, callback);
-    });
-    subscriptions.length = 0;
-}
-
 onceReady.then(() => {
-    const userID = UserStore.getCurrentUser().id;
-
     const speakingCallback = (params: any) => {
-        if (params.userId === userID && params.context === "default") {
+        const userID = UserStore.getCurrentUser()?.id;
+        if (userID && params.userId === userID && params.context === "default") {
             if (params.speakingFlags) {
-                if (currentVariant !== "traySpeaking") {
-                    currentVariant = "traySpeaking";
-                    VesktopNative.tray.setVoiceState("traySpeaking");
-                }
+                setTrayVariantImmediately("traySpeaking");
             } else {
                 updateTrayIcon();
             }
         }
     };
     FluxDispatcher.subscribe("SPEAKING", speakingCallback);
-    subscriptions.push({ event: "SPEAKING", callback: speakingCallback });
 
     const deafCallback = () => {
         if (isInCall) updateTrayIcon();
     };
     FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_DEAF", deafCallback);
-    subscriptions.push({ event: "AUDIO_TOGGLE_SELF_DEAF", callback: deafCallback });
 
     const muteCallback = () => {
         if (isInCall) updateTrayIcon();
     };
     FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_MUTE", muteCallback);
-    subscriptions.push({ event: "AUDIO_TOGGLE_SELF_MUTE", callback: muteCallback });
 
     const rtcCallback = (params: any) => {
         if (params.context === "default") {
             if (params.state === "RTC_CONNECTED") {
                 isInCall = true;
+                callStartTime = Date.now();
                 VesktopNative.tray.setVoiceCallState(true);
                 updateTrayIcon();
             } else if (params.state === "RTC_DISCONNECTED") {
                 isInCall = false;
-                currentVariant = null;
+                callStartTime = null;
+                resetTrayStateTracking();
                 VesktopNative.tray.setVoiceCallState(false);
                 if (Settings.store.appBadge) setBadge();
                 else VesktopNative.app.setBadgeCount(0);
@@ -90,5 +114,4 @@ onceReady.then(() => {
         }
     };
     FluxDispatcher.subscribe("RTC_CONNECTION_STATE", rtcCallback);
-    subscriptions.push({ event: "RTC_CONNECTION_STATE", callback: rtcCallback });
 });

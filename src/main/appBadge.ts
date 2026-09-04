@@ -50,7 +50,7 @@ export function setBadgeCount(count: number) {
 
     switch (process.platform) {
         case "linux":
-            // if (count === -1) count = 0;
+            if (count === -1) count = 0;
             updateUnityLauncherCount(count);
             break;
         case "darwin":

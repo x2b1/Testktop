@@ -8,7 +8,6 @@ import "./screenSharePicker.css";
 
 import { classNameFactory } from "@equicord/types/api/Styles";
 import {
-    BaseText,
     Button,
     Card,
     CogWheel,
@@ -20,21 +19,11 @@ import {
     RestartIcon,
     Span
 } from "@equicord/types/components";
-import {
-    closeModal,
-    Logger,
-    ModalCloseButton,
-    Modals,
-    ModalSize,
-    openModal,
-    useAwaiter,
-    useForceUpdater
-} from "@equicord/types/utils";
+import { closeModal, Logger, openModal, useAwaiter, useForceUpdater } from "@equicord/types/utils";
 import { onceReady } from "@equicord/types/webpack";
-import { FluxDispatcher, MediaEngineStore, Select, UserStore, useState } from "@equicord/types/webpack/common";
+import { FluxDispatcher, MediaEngineStore, Modal, Select, UserStore, useState } from "@equicord/types/webpack/common";
 import { Node } from "@vencord/venmic";
 import type { Dispatch, SetStateAction } from "react";
-import { addPatch } from "renderer/patches/shared";
 import { State, useSettings, useVesktopState } from "renderer/settings";
 import { isLinux, isWindows } from "renderer/utils";
 
@@ -79,61 +68,32 @@ export let currentSettings: StreamSettings | null = null;
 
 const logger = new Logger("EquibopScreenShare");
 
-addPatch({
-    patches: [
-        {
-            find: "this.getDefaultGoliveQuality()",
-            replacement: {
-                match: /this\.getDefaultGoliveQuality\(\)/,
-                replace: "$self.patchStreamQuality($&)"
-            }
-        }
-    ],
-    patchStreamQuality(opts: any) {
-        const { screenshareQuality } = State.store;
-        if (!screenshareQuality) return opts;
-
-        const framerate = Number(screenshareQuality.frameRate);
-        const height = Number(screenshareQuality.resolution);
-        const width = Math.round(height * (16 / 9));
-
-        Object.assign(opts, {
-            bitrateMin: 500000,
-            bitrateMax: 8000000,
-            bitrateTarget: 600000
-        });
-        if (opts?.encode) {
-            Object.assign(opts.encode, {
-                framerate,
-                width,
-                height,
-                pixelCount: height * width
-            });
-        }
-        Object.assign(opts.capture, {
-            framerate,
-            width,
-            height,
-            pixelCount: height * width
-        });
-        return opts;
-    }
-});
-
 let streamCloseCallback: ((data: any) => void) | null = null;
+let streamUpdateCallback: ((data: any) => void) | null = null;
 
 if (isLinux) {
     onceReady.then(() => {
-        streamCloseCallback = ({ streamKey }: { streamKey: string }) => {
-            const owner = streamKey.split(":").at(-1);
+        const ownsStream = (streamKey: string) => {
+            return streamKey.split(":").at(-1) === UserStore.getCurrentUser().id;
+        };
 
-            if (owner !== UserStore.getCurrentUser().id) {
+        streamCloseCallback = ({ streamKey }: { streamKey: string }) => {
+            if (!ownsStream(streamKey)) {
                 return;
             }
 
             VesktopNative.virtmic.stop();
         };
         FluxDispatcher.subscribe("STREAM_CLOSE", streamCloseCallback);
+
+        streamUpdateCallback = ({ streamKey }: { streamKey: string }) => {
+            if (!ownsStream(streamKey)) {
+                return;
+            }
+
+            VesktopNative.virtmic.unmute();
+        };
+        FluxDispatcher.subscribe("STREAM_UPDATE", streamUpdateCallback);
     });
 }
 
@@ -141,6 +101,10 @@ export function cleanupScreenShareSubscriptions() {
     if (streamCloseCallback) {
         FluxDispatcher.unsubscribe("STREAM_CLOSE", streamCloseCallback);
         streamCloseCallback = null;
+    }
+    if (streamUpdateCallback) {
+        FluxDispatcher.unsubscribe("STREAM_UPDATE", streamUpdateCallback);
+        streamUpdateCallback = null;
     }
 }
 
@@ -220,15 +184,21 @@ function AudioSettingsModal({
     const Settings = useSettings();
 
     return (
-        <Modals.ModalRoot {...modalProps} size={ModalSize.MEDIUM}>
-            <Modals.ModalHeader className={cl("header")}>
-                <BaseText size="lg" weight="semibold" tag="h3" style={{ flexGrow: 1 }}>
-                    Audio Settings
-                </BaseText>
-                <ModalCloseButton onClick={close} />
-            </Modals.ModalHeader>
-
-            <Modals.ModalContent className={cl("modal", "venmic-settings")}>
+        <Modal
+            {...modalProps}
+            size="md"
+            title="Audio Settings"
+            onClose={close}
+            actions={[{ text: "Back", variant: "secondary", onClick: close }]}
+        >
+            <div className={cl("venmic-settings")}>
+                <FormSwitch
+                    title="Initial Mute"
+                    description="Fix an initial audio spike caused by chromium."
+                    hideBorder
+                    onChange={v => (Settings.audio = { ...Settings.audio, mute: v })}
+                    value={Settings.audio?.mute ?? true}
+                />
                 <FormSwitch
                     title="Microphone Workaround"
                     description="Work around an issue that causes the microphone to be shared instead of the correct audio. Only enable if you're experiencing this issue."
@@ -312,13 +282,8 @@ function AudioSettingsModal({
                     value={Settings.audio?.deviceSelect ?? false}
                     disabled={Settings.audio?.ignoreDevices}
                 />
-            </Modals.ModalContent>
-            <Modals.ModalFooter className={cl("footer")}>
-                <Button variant="secondary" onClick={close}>
-                    Back
-                </Button>
-            </Modals.ModalFooter>
-        </Modals.ModalRoot>
+            </div>
+        </Modal>
     );
 }
 
@@ -465,78 +430,61 @@ function isSpecialSource(value?: AudioSource | AudioSources): value is SpecialSo
     return typeof value === "string";
 }
 
-function hasMatchingProps(value: Node, other: Node) {
-    return Object.keys(value).every(key => value[key] === other[key]);
-}
-
 function mapToAudioItem(node: AudioSource, granularSelect?: boolean, deviceSelect?: boolean): AudioItem[] {
     if (isSpecialSource(node)) {
         return [{ name: node, value: node }];
     }
 
-    const rtn: AudioItem[] = [];
-
     const mediaClass = node["media.class"];
 
     if (mediaClass?.includes("Video") || mediaClass?.includes("Midi")) {
-        return rtn;
+        return [];
     }
 
     if (!deviceSelect && node["device.id"]) {
-        return rtn;
+        return [];
     }
 
-    const name = node["application.name"];
+    const preferred = ["application.name", "node.description", "node.name", "application.process.binary"] as const;
+    const prop = preferred.find(prop => node[prop]);
 
-    if (name) {
-        rtn.push({ name: name, value: { "application.name": name } });
+    if (!prop) {
+        return [];
     }
+
+    const name = node[prop]!;
+    const items: AudioItem[] = [{ name: name, value: { [prop]: name } }];
 
     if (!granularSelect) {
-        return rtn;
+        return items;
     }
 
-    const rawName = node["node.name"];
+    let granularName = name;
+    const granularProps: Node = { [prop]: name };
 
-    if (!name) {
-        rtn.push({ name: rawName, value: { "node.name": rawName } });
-    }
+    const append = (name: string, brackets: string) => {
+        const value = node[name];
 
-    const binary = node["application.process.binary"];
+        if (!value) {
+            return;
+        }
 
-    if (!name && binary) {
-        rtn.push({ name: binary, value: { "application.process.binary": binary } });
-    }
+        granularName += ` ${brackets[0]}${value}${brackets[1]}`;
+        granularProps[name] = value;
+    };
 
-    const pid = node["application.process.id"];
+    append("application.process.id", "<>");
+    append("application.process.binary", "()");
+    append("media.name", "[]");
 
-    const first = rtn[0];
-    const firstValues = first.value as Node;
+    items.push({ name: granularName, value: granularProps });
 
-    if (pid) {
-        rtn.push({
-            name: `${first.name} (${pid})`,
-            value: { ...firstValues, "application.process.id": pid }
-        });
-    }
+    return items;
+}
 
-    const mediaName = node["media.name"];
-
-    if (mediaName) {
-        rtn.push({
-            name: `${first.name} [${mediaName}]`,
-            value: { ...firstValues, "media.name": mediaName }
-        });
-    }
-
-    if (mediaClass) {
-        rtn.push({
-            name: `${first.name} [${mediaClass}]`,
-            value: { ...firstValues, "media.class": mediaClass }
-        });
-    }
-
-    return rtn;
+function hasMatchingProps(value: Node, other: Node) {
+    const keys = Object.keys(value);
+    return keys.length === Object.keys(other).length && keys.every(key => value[key] === other[key]);
 }
 
 function isItemSelected(sources?: AudioSources) {
@@ -665,9 +613,10 @@ function AudioSourcePickerLinux({
                             }))}
                             isSelected={isItemSelected(includeSources)}
                             select={updateItems(setIncludeSources, includeSources)}
-                            serialize={String}
+                            serialize={JSON.stringify}
                             popoutPosition="top"
                             closeOnSelect={false}
+                            renderOptionLabel={o => o.label}
                         />
                     </SimpleErrorBoundary>
                 </section>
@@ -685,9 +634,10 @@ function AudioSourcePickerLinux({
                                     }))}
                                 isSelected={isItemSelected(excludeSources)}
                                 select={updateItems(setExcludeSources, excludeSources)}
-                                serialize={String}
+                                serialize={JSON.stringify}
                                 popoutPosition="top"
                                 closeOnSelect={false}
+                                renderOptionLabel={o => o.label}
                             />
                         </SimpleErrorBoundary>
                     </section>
@@ -731,15 +681,75 @@ function ModalComponent({
         frameRate: "30"
     });
 
+    const goLive = () => {
+        currentSettings = settings;
+        try {
+            const frameRate = Number(qualitySettings.frameRate);
+            const height = Number(qualitySettings.resolution);
+            const width = Math.round(height * (16 / 9));
+
+            const conn = [...MediaEngineStore.getMediaEngine().connections].find(
+                connection => connection.streamUserId === UserStore.getCurrentUser().id
+            );
+
+            if (conn) {
+                conn.videoStreamParameters[0].maxFrameRate = frameRate;
+                conn.videoStreamParameters[0].maxResolution ??= { width: 0, height: 0 };
+                conn.videoStreamParameters[0].maxResolution.height = height;
+                conn.videoStreamParameters[0].maxResolution.width = width;
+            }
+
+            submit({
+                id: selected!,
+                ...settings
+            });
+
+            setTimeout(async () => {
+                const conn = [...MediaEngineStore.getMediaEngine().connections].find(
+                    connection => connection.streamUserId === UserStore.getCurrentUser().id
+                );
+                if (!conn) return;
+
+                const track = (conn as any).input.stream.getVideoTracks()[0];
+
+                const constraints = {
+                    ...track.getConstraints(),
+                    frameRate: { min: frameRate, ideal: frameRate },
+                    width: { min: 640, ideal: width, max: width },
+                    height: { min: 480, ideal: height, max: height },
+                    advanced: [{ width: width, height: height }],
+                    resizeMode: "none"
+                };
+
+                try {
+                    await track.applyConstraints(constraints);
+
+                    logger.info("Applied constraints successfully. New constraints:", track.getConstraints());
+                } catch (e) {
+                    logger.error("Failed to apply constraints.", e);
+                }
+            }, 100);
+        } catch (error) {
+            logger.error("Error while submitting stream.", error);
+        }
+
+        close();
+    };
+
     return (
-        <Modals.ModalRoot {...modalProps} size={ModalSize.MEDIUM}>
-            <Modals.ModalHeader className={cl("header")}>
-                <BaseText size="lg" weight="semibold" tag="h3" style={{ flexGrow: 1 }}>
-                    Screen Share Picker
-                </BaseText>
-                <ModalCloseButton onClick={close} />
-            </Modals.ModalHeader>
-            <Modals.ModalContent className={cl("modal")}>
+        <Modal
+            {...modalProps}
+            size="lg"
+            title="Screen Share Picker"
+            onClose={close}
+            actions={[
+                { text: "Go Live", variant: "primary", disabled: !selected, onClick: goLive },
+                selected && !skipPicker
+                    ? { text: "Back", variant: "secondary", onClick: () => setSelected(void 0) }
+                    : { text: "Cancel", variant: "secondary", onClick: close }
+            ]}
+        >
+            <div className={cl("modal")}>
                 {!selected ? (
                     <ScreenPicker screens={screens} chooseScreen={setSelected} />
                 ) : (
@@ -750,80 +760,7 @@ function ModalComponent({
                         skipPicker={skipPicker}
                     />
                 )}
-            </Modals.ModalContent>
-            <Modals.ModalFooter className={cl("footer")}>
-                <Button
-                    disabled={!selected}
-                    onClick={() => {
-                        currentSettings = settings;
-                        try {
-                            const frameRate = Number(qualitySettings.frameRate);
-                            const height = Number(qualitySettings.resolution);
-                            const width = Math.round(height * (16 / 9));
-
-                            const conn = [...MediaEngineStore.getMediaEngine().connections].find(
-                                connection => connection.streamUserId === UserStore.getCurrentUser().id
-                            );
-
-                            if (conn) {
-                                conn.videoStreamParameters[0].maxFrameRate = frameRate;
-                                conn.videoStreamParameters[0].maxResolution.height = height;
-                                conn.videoStreamParameters[0].maxResolution.width = width;
-                            }
-
-                            submit({
-                                id: selected!,
-                                ...settings
-                            });
-
-                            setTimeout(async () => {
-                                const conn = [...MediaEngineStore.getMediaEngine().connections].find(
-                                    connection => connection.streamUserId === UserStore.getCurrentUser().id
-                                );
-                                if (!conn) return;
-
-                                const track = conn.input.stream.getVideoTracks()[0];
-
-                                const constraints = {
-                                    ...track.getConstraints(),
-                                    frameRate: { min: frameRate, ideal: frameRate },
-                                    width: { min: 640, ideal: width, max: width },
-                                    height: { min: 480, ideal: height, max: height },
-                                    advanced: [{ width: width, height: height }],
-                                    resizeMode: "none"
-                                };
-
-                                try {
-                                    await track.applyConstraints(constraints);
-
-                                    logger.info(
-                                        "Applied constraints successfully. New constraints:",
-                                        track.getConstraints()
-                                    );
-                                } catch (e) {
-                                    logger.error("Failed to apply constraints.", e);
-                                }
-                            }, 100);
-                        } catch (error) {
-                            logger.error("Error while submitting stream.", error);
-                        }
-
-                        close();
-                    }}
-                >
-                    Go Live
-                </Button>
-
-                {selected && !skipPicker ? (
-                    <Button variant="secondary" onClick={() => setSelected(void 0)}>
-                        Back
-                    </Button>
-                ) : (
-                    <Button variant="secondary" onClick={close}>
-                        Cancel
-                    </Button>
-                )}
-            </Modals.ModalFooter>
-        </Modals.ModalRoot>
+            </div>
+        </Modal>
     );
 }
