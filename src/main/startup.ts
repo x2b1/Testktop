@@ -35,7 +35,8 @@ function init() {
     if (Settings.store.firewall === undefined) Settings.store.firewall = true;
     if (Settings.store.spoofChrome === undefined) Settings.store.spoofChrome = true;
     if (Settings.store.domOptimizer === undefined) Settings.store.domOptimizer = true;
-    if (Settings.store.renderingOptimizations === undefined) Settings.store.renderingOptimizations = true;
+    // RenderingOptimizations was breaking account switcher positioning — force disabled for now
+    Settings.store.renderingOptimizations = false;
     // Tabs force-disabled for now (wrongly integrated)
     Settings.store.tabsEnabled = false;
     if (Settings.store.tabsPosition === undefined) Settings.store.tabsPosition = "top";

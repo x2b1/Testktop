@@ -24,6 +24,13 @@ mkdirSync(DATA_DIR, { recursive: true });
 
 export const SESSION_DATA_DIR = join(DATA_DIR, "sessionData");
 app.setPath("sessionData", SESSION_DATA_DIR);
+// Ensure Tesktop has isolated storage — never share with discordcanary/discordptb/discord
+// Force userData to be DATA_DIR even in dev (prevents Electron default sharing)
+if (app.getPath("userData") !== DATA_DIR) {
+    try {
+        app.setPath("userData", DATA_DIR);
+    } catch {}
+}
 
 export const VENCORD_SETTINGS_DIR = join(DATA_DIR, "settings");
 mkdirSync(VENCORD_SETTINGS_DIR, { recursive: true });

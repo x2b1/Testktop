@@ -35,20 +35,36 @@ export function initDomOptimizer() {
     logger.log("DOM Optimizer enabled");
 }
 
-// Rendering optimizations: inject CSS
+// Rendering optimizations: inject CSS — fixed to not break popouts/selects (was causing account switcher to appear way up)
 export function injectRenderingOptimizations() {
     try {
         const settings = (window as any).VesktopNative?.settings?.get?.();
-        if (settings?.renderingOptimizations === false) return;
+        if (settings?.renderingOptimizations === false) {
+            logger.log("Rendering optimizations disabled by user");
+            return;
+        }
+        // Also force-disable if causing issues — user reported select menus mispositioned
+        // We keep GoofCord's original but exclude layers/popouts/menus and remove content-visibility
+        if (settings?.renderingOptimizations === true) {
+            // still allow but we will inject safe version; user can disable in Settings → Smoothness
+        }
     } catch {}
     const css = `
-        [class*="messagesWrapper"], #channels, #emoji-picker-grid, [class*="membersWrap"] {
+        /* GoofCord original, but SAFE: exclude any popout/layer/menu to fix account switcher */
+        [class*="messagesWrapper"]:not([class*="layer"]):not([class*="popout"]):not([class*="menu"]),
+        #channels:not([class*="layer"]),
+        #emoji-picker-grid,
+        [class*="membersWrap"]:not([class*="layer"]) {
             will-change: transform, scroll-position;
-            contain: strict;
+            contain: content; /* strict breaks fixed popouts, content is safe */
         }
-        [class*="scroller"] { content-visibility: auto; contain-intrinsic-size: 1000px; }
-        /* Tesktop smoothness: avoid forced reflow */
-        [class*="messageListItem"] { contain: layout style; }
+        /* content-visibility removed — was breaking select positioning (fixed up there bug) */
+        /* [class*="scroller"] and [class*="messageListItem"] disabled for now */
+        /* Ensure popouts/layers/menus are never contained */
+        [class*="layer"], [class*="popout"], [class*="menu"], [class*="tooltip"], [class*="modal"] {
+            contain: none !important;
+            content-visibility: visible !important;
+        }
     `;
     const el = document.createElement("style");
     el.id = "tesktop-rendering-opts";

@@ -193,8 +193,10 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
         {
             key: "renderingOptimizations",
             title: "Rendering Optimizations",
-            description: "Applies CSS containment for smoother scrolling. Text may appear blurry with some themes.",
-            defaultValue: true
+            description:
+                "Applies CSS containment for smoother scrolling. Text may appear blurry with some themes. (FORCE DISABLED — was breaking account switcher positioning)",
+            defaultValue: false,
+            disabled: () => true
         },
         {
             key: "performanceFlags",

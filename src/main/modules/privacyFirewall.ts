@@ -45,6 +45,15 @@ function getOrDefault<T>(key: keyof typeof Settings.store, def: T): T {
     return (v as T) ?? def;
 }
 
+function getTesktopSession() {
+    // Use isolated partition for Tesktop — ensures separate accounts/memory from Canary
+    try {
+        return session.fromPartition("persist:tesktop-isolated");
+    } catch {
+        return session.defaultSession;
+    }
+}
+
 export function initFirewall() {
     // default to true if undefined (privacy by default)
     const enabled = Settings.store.firewall ?? true;
@@ -62,37 +71,42 @@ export function initFirewall() {
         ? getOrDefault("allowedStrings", DEFAULT_ALLOWED_STRINGS)
         : DEFAULT_ALLOWED_STRINGS;
 
-    if (blocklist[0] !== "" && blocklist.length) {
-        session.defaultSession.webRequest.onBeforeRequest({ urls: blocklist }, (_, callback) =>
-            callback({ cancel: true })
-        );
+    const ses = getTesktopSession();
+    const def = session.defaultSession;
+    for (const s of [ses, def] as const) {
+        if (blocklist[0] !== "" && blocklist.length) {
+            s.webRequest.onBeforeRequest({ urls: blocklist }, (_, callback) => callback({ cancel: true }));
+        }
+
+        const blockRegex = new RegExp(blockedStrings.join("|"), "i");
+        const allowRegex = new RegExp(allowedStrings.join("|"), "i");
+
+        s.webRequest.onBeforeSendHeaders({ urls: ["<all_urls>"] }, (details, callback) => {
+            if (details.resourceType !== "xhr") return callback({ cancel: false });
+            if (blockRegex.test(details.url) && !allowRegex.test(details.url)) {
+                return callback({ cancel: true });
+            }
+            callback({ cancel: false });
+        });
     }
 
-    const blockRegex = new RegExp(blockedStrings.join("|"), "i");
-    const allowRegex = new RegExp(allowedStrings.join("|"), "i");
-
-    session.defaultSession.webRequest.onBeforeSendHeaders({ urls: ["<all_urls>"] }, (details, callback) => {
-        if (details.resourceType !== "xhr") return callback({ cancel: false });
-        if (blockRegex.test(details.url) && !allowRegex.test(details.url)) {
-            return callback({ cancel: true });
-        }
-        callback({ cancel: false });
-    });
-
-    console.log("[Tesktop Firewall] Initialized — blocking telemetry & tracking");
+    console.log("[Tesktop Firewall] Initialized — blocking telemetry & tracking (isolated partition + default)");
 }
 
 export function unstrictCSP() {
-    session.defaultSession.webRequest.onHeadersReceived(({ responseHeaders, resourceType }, done) => {
-        if (!responseHeaders) return done({});
-        if (resourceType === "mainFrame" || resourceType === "subFrame") {
-            responseHeaders["content-security-policy"] = [""];
-        } else if (resourceType === "stylesheet") {
-            responseHeaders["content-type"] = ["text/css"];
-        }
-        done({ responseHeaders });
-    });
-    console.log("[Tesktop Firewall] CSP relaxed for custom assets");
+    const ses = getTesktopSession();
+    for (const s of [ses, session.defaultSession] as const) {
+        s.webRequest.onHeadersReceived(({ responseHeaders, resourceType }, done) => {
+            if (!responseHeaders) return done({});
+            if (resourceType === "mainFrame" || resourceType === "subFrame") {
+                responseHeaders["content-security-policy"] = [""];
+            } else if (resourceType === "stylesheet") {
+                responseHeaders["content-type"] = ["text/css"];
+            }
+            done({ responseHeaders });
+        });
+    }
+    console.log("[Tesktop Firewall] CSP relaxed for custom assets (isolated)");
 }
 
 export function initProxy() {
@@ -102,7 +116,10 @@ export function initProxy() {
     const rules = Settings.store.proxyRules || "127.0.0.1:8080";
     const bypass = Settings.store.proxyBypassRules || "<local>";
 
-    session.defaultSession.setProxy({ proxyRules: rules, proxyBypassRules: bypass }).then(() => {
-        console.log(`[Tesktop Proxy] Enabled → ${rules} (bypass: ${bypass})`);
+    const ses = getTesktopSession();
+    ses.setProxy({ proxyRules: rules, proxyBypassRules: bypass }).then(() => {
+        console.log(`[Tesktop Proxy] Enabled → ${rules} (bypass: ${bypass}) [isolated partition]`);
     });
+    // also set default for safety
+    session.defaultSession.setProxy({ proxyRules: rules, proxyBypassRules: bypass }).catch(() => {});
 }
