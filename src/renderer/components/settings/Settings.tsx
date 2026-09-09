@@ -58,7 +58,8 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
         {
             key: "nativeTitleBar",
             title: "Native Titlebar",
-            description: "Enable the system titlebar in addition to Discord's custom one. Requires a full restart."
+            description:
+                "Enable the system titlebar (with minimize/maximize/close). Recommended ON for Windows to guarantee the bar never disappears. Requires a full restart."
         },
         {
             key: "staticTitle",
