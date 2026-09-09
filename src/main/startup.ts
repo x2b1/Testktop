@@ -57,18 +57,10 @@ function init() {
     app.commandLine.removeSwitch("enable-features");
     app.commandLine.removeSwitch("disable-features");
 
-    if (hardwareAcceleration === false || process.argv.includes("--disable-gpu")) {
+    if (!hardwareAcceleration || process.argv.includes("--disable-gpu")) {
         enableHardwareAcceleration = false;
         app.disableHardwareAcceleration();
     } else {
-        if (isLinux) {
-            disabledFeatures.add("WaylandWpColorManagerV1");
-            // Wayland + Vulkan are incompatible — disable Vulkan on Wayland (GoofCord parity, fixes ui/ozone error)
-            if (process.env.XDG_SESSION_TYPE === "wayland" || !!process.env.WAYLAND_DISPLAY) {
-                disabledFeatures.add("Vulkan");
-            }
-        }
-
         if (hardwareVideoAcceleration) {
             enabledFeatures.add("AcceleratedVideoEncoder");
             enabledFeatures.add("AcceleratedVideoDecoder");
@@ -82,13 +74,6 @@ function init() {
 
     if (disableSmoothScroll) {
         app.commandLine.appendSwitch("disable-smooth-scrolling");
-    }
-
-    app.commandLine.appendSwitch("disable-renderer-backgrounding");
-    app.commandLine.appendSwitch("disable-background-timer-throttling");
-    app.commandLine.appendSwitch("disable-backgrounding-occluded-windows");
-    if (process.platform === "win32") {
-        disabledFeatures.add("CalculateNativeWinOcclusion");
     }
 
     if (launchArguments) {
@@ -115,15 +100,20 @@ function init() {
         console.log("Applied launch arguments:", launchArguments);
     }
 
+    // work around chrome 66 disabling autoplay by default
     app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 
-    disabledFeatures.add("WinRetrieveSuggestionsOnlyOnDemand");
+    // Prevent Discord from registering as a media service.
     disabledFeatures.add("HardwareMediaKeyHandling");
     disabledFeatures.add("MediaSessionService");
 
     if (isLinux) {
-        app.commandLine.appendSwitch("enable-speech-dispatcher");
         app.commandLine.appendSwitch("log-level", "3");
+
+        // This is needed to fix washed out colours - https://github.com/electron/electron/issues/49566
+        // Supposed to be fixed already according to comments there, but it's just not lol, I can repro on Electron 43.0.0
+        // when moving the window from my main monitor (HDR - not sure if this is relevant lol) to second monitor (SDR) and back
+        disabledFeatures.add("WaylandWpColorManagerV1");
     }
 
     // Ensure Vulkan is disabled on Wayland regardless of how Wayland was requested
